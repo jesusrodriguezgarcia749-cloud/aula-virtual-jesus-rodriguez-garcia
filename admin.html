@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+<script src="//cdn.jsdelivr.net/npm/eruda"></script>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -59,7 +60,7 @@
   <div id="estado">Conectando…</div>
   <div id="lista"></div>
 </main>
-
+<script>eruda.init();</script>
 <script type="module">
 import { app, db } from './firebase-config.js';
 import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
