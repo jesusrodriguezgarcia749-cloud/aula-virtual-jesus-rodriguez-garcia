@@ -31,6 +31,10 @@
     padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; margin: 0;
   }
   #lista { margin-top: 20px; }
+  #estado {
+    margin-top: 16px; padding: 12px 14px; border-radius: 10px;
+    font-size: 0.85rem; background: #e7ddc9; color: #4a4030;
+  }
 </style>
 </head>
 <body>
@@ -52,17 +56,28 @@
   <input id="nombreAlumno" type="text" placeholder="Nombre y apellido">
   <button id="btnAgregar">Agregar alumno</button>
 
+  <div id="estado">Conectando…</div>
   <div id="lista"></div>
 </main>
 
 <script type="module">
-import { db } from './firebase-config.js';
+import { app, db } from './firebase-config.js';
 import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { app } from './firebase-config.js';
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
+const estado = document.getElementById('estado');
 const auth = getAuth(app);
-await signInAnonymously(auth);
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    estado.textContent = 'Conectado. Buscando alumnos…';
+    cargarAlumnos();
+  }
+});
+
+signInAnonymously(auth).catch((err) => {
+  estado.textContent = 'Error al conectar: ' + err.message;
+});
 
 const materiaSel = document.getElementById('materia');
 const grupoInput = document.getElementById('grupo');
@@ -82,39 +97,48 @@ function generarPIN() {
 function cargarAlumnos() {
   if (unsub) unsub();
   const q = query(rutaAlumnos(), orderBy('nombre'));
-  unsub = onSnapshot(q, (snap) => {
-    lista.innerHTML = '';
-    snap.forEach((docu) => {
-      const d = docu.data();
-      const div = document.createElement('div');
-      div.className = 'alumno';
-      div.innerHTML = `
-        <span>${d.nombre}</span>
-        <span class="pin">PIN: ${d.pin}</span>
-        <button class="eliminar" data-id="${docu.id}">Eliminar</button>
-      `;
-      lista.appendChild(div);
-    });
-    lista.querySelectorAll('.eliminar').forEach(btn => {
-      btn.onclick = async () => {
-        const materia = materiaSel.value;
-        const grupo = grupoInput.value.trim() || '1A';
-        await deleteDoc(doc(db, 'materias', materia, 'grupos', grupo, 'alumnos', btn.dataset.id));
-      };
-    });
-  });
+  unsub = onSnapshot(q,
+    (snap) => {
+      estado.textContent = `Conectado. ${snap.size} alumno(s) encontrado(s).`;
+      lista.innerHTML = '';
+      snap.forEach((docu) => {
+        const d = docu.data();
+        const div = document.createElement('div');
+        div.className = 'alumno';
+        div.innerHTML = `
+          <span>${d.nombre}</span>
+          <span class="pin">PIN: ${d.pin}</span>
+          <button class="eliminar" data-id="${docu.id}">Eliminar</button>
+        `;
+        lista.appendChild(div);
+      });
+      lista.querySelectorAll('.eliminar').forEach(btn => {
+        btn.onclick = async () => {
+          const materia = materiaSel.value;
+          const grupo = grupoInput.value.trim() || '1A';
+          await deleteDoc(doc(db, 'materias', materia, 'grupos', grupo, 'alumnos', btn.dataset.id));
+        };
+      });
+    },
+    (err) => {
+      estado.textContent = 'Error al leer datos: ' + err.message;
+    }
+  );
 }
 
 document.getElementById('btnAgregar').onclick = async () => {
   const nombre = document.getElementById('nombreAlumno').value.trim();
   if (!nombre) return;
-  await addDoc(rutaAlumnos(), { nombre, pin: generarPIN() });
-  document.getElementById('nombreAlumno').value = '';
+  try {
+    await addDoc(rutaAlumnos(), { nombre, pin: generarPIN() });
+    document.getElementById('nombreAlumno').value = '';
+  } catch (err) {
+    estado.textContent = 'Error al guardar: ' + err.message;
+  }
 };
 
 materiaSel.onchange = cargarAlumnos;
 grupoInput.onchange = cargarAlumnos;
-cargarAlumnos();
 </script>
 </body>
 </html>
