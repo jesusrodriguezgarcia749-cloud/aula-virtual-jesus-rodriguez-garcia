@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel docente — Aula Virtual JRG</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, 'Times New Roman', serif; background: #f2ece1; color: #17140f; min-height: 100vh; }
+  header { background: #17140f; color: #f2ece1; padding: 20px 24px; display: flex; align-items: center; gap: 12px; }
+  header a { color: #f2ece1; text-decoration: none; font-size: 1.4rem; }
+  header h1 { font-size: 1.2rem; }
+  main { padding: 24px; max-width: 680px; margin: 0 auto; }
+  label { display: block; font-size: 0.85rem; color: #6b6252; margin-bottom: 4px; margin-top: 16px; }
+  select, input {
+    width: 100%; padding: 12px 14px; border-radius: 10px;
+    border: 1px solid #cfc6b6; font-family: inherit; font-size: 1rem; background: #fff;
+  }
+  button {
+    margin-top: 16px; background: #d99a3d; color: #17140f; border: none;
+    padding: 12px 20px; border-radius: 30px; font-weight: bold; font-size: 1rem; cursor: pointer;
+  }
+  .alumno {
+    display: flex; justify-content: space-between; align-items: center;
+    background: #fff; border: 1px solid #e2d9c6; border-radius: 12px;
+    padding: 14px 16px; margin-top: 10px;
+  }
+  .alumno .pin { background: #f2ece1; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; }
+  .alumno button.eliminar {
+    background: none; border: 1px solid #b04a3a; color: #b04a3a;
+    padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; margin: 0;
+  }
+  #lista { margin-top: 20px; }
+</style>
+</head>
+<body>
+<header>
+  <a href="index.html">←</a>
+  <h1>Panel docente</h1>
+</header>
+<main>
+  <label>Materia</label>
+  <select id="materia">
+    <option value="bases-culinarias">Bases Culinarias</option>
+    <option value="expresion-oral-escrita">Expresión Oral y Escrita</option>
+  </select>
+
+  <label>Grupo (ej. 1A)</label>
+  <input id="grupo" type="text" placeholder="1A" value="1A">
+
+  <label>Nombre completo del alumno</label>
+  <input id="nombreAlumno" type="text" placeholder="Nombre y apellido">
+  <button id="btnAgregar">Agregar alumno</button>
+
+  <div id="lista"></div>
+</main>
+
+<script type="module">
+import { db } from './firebase-config.js';
+import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { app } from './firebase-config.js';
+
+const auth = getAuth(app);
+await signInAnonymously(auth);
+
+const materiaSel = document.getElementById('materia');
+const grupoInput = document.getElementById('grupo');
+const lista = document.getElementById('lista');
+let unsub = null;
+
+function rutaAlumnos() {
+  const materia = materiaSel.value;
+  const grupo = grupoInput.value.trim() || '1A';
+  return collection(db, 'materias', materia, 'grupos', grupo, 'alumnos');
+}
+
+function generarPIN() {
+  return String(Math.floor(1000 + Math.random() * 9000));
+}
+
+function cargarAlumnos() {
+  if (unsub) unsub();
+  const q = query(rutaAlumnos(), orderBy('nombre'));
+  unsub = onSnapshot(q, (snap) => {
+    lista.innerHTML = '';
+    snap.forEach((docu) => {
+      const d = docu.data();
+      const div = document.createElement('div');
+      div.className = 'alumno';
+      div.innerHTML = `
+        <span>${d.nombre}</span>
+        <span class="pin">PIN: ${d.pin}</span>
+        <button class="eliminar" data-id="${docu.id}">Eliminar</button>
+      `;
+      lista.appendChild(div);
+    });
+    lista.querySelectorAll('.eliminar').forEach(btn => {
+      btn.onclick = async () => {
+        const materia = materiaSel.value;
+        const grupo = grupoInput.value.trim() || '1A';
+        await deleteDoc(doc(db, 'materias', materia, 'grupos', grupo, 'alumnos', btn.dataset.id));
+      };
+    });
+  });
+}
+
+document.getElementById('btnAgregar').onclick = async () => {
+  const nombre = document.getElementById('nombreAlumno').value.trim();
+  if (!nombre) return;
+  await addDoc(rutaAlumnos(), { nombre, pin: generarPIN() });
+  document.getElementById('nombreAlumno').value = '';
+};
+
+materiaSel.onchange = cargarAlumnos;
+grupoInput.onchange = cargarAlumnos;
+cargarAlumnos();
+</script>
+</body>
+</html>
