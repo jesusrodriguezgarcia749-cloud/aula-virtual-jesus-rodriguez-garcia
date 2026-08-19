@@ -25,8 +25,15 @@
   }
   #estado { margin-top: 16px; padding: 12px 14px; border-radius: 10px; font-size: 0.9rem; background: #2a2013; color: #cfc6b6; }
   #panelAlumno { display: none; }
-  #panelAlumno .saludo { font-size: 1.4rem; margin-bottom: 20px; }
-  #cambiar { background: none; border: 1px solid #6b6252; color: #cfc6b6; margin-top: 8px; }
+  #panelAlumno .saludo { font-size: 1.4rem; margin-bottom: 4px; }
+  #panelAlumno .grupo { color: #a89f8d; font-size: 0.9rem; margin-bottom: 24px; }
+  #cambiar { background: none; border: 1px solid #6b6252; color: #cfc6b6; margin-top: 24px; }
+  .bloque h3 { color: #d99a3d; font-size: 1rem; margin: 20px 0 10px; border-bottom: 1px solid #3a3020; padding-bottom: 6px; }
+  .subtema {
+    display: block; width: 100%; text-align: left; background: #201b13; border: 1px solid #3a3020;
+    border-radius: 10px; padding: 14px 16px; margin-bottom: 10px;
+    color: #f2ece1; font-size: 0.95rem; font-family: inherit; cursor: pointer;
+  }
 </style>
 </head>
 <body>
@@ -53,7 +60,8 @@
 
   <div id="panelAlumno">
     <div class="saludo">Hola, <span id="nombreAlumno"></span></div>
-    <p style="color:#cfc6b6;">Las actividades por subtema estarán disponibles aquí en el siguiente paso de construcción.</p>
+    <div class="grupo">Bases Culinarias</div>
+    <div id="listaSubtemas"></div>
     <button id="cambiar">Cambiar de alumno</button>
   </div>
 </main>
@@ -70,27 +78,43 @@ const estado = document.getElementById('estado');
 const panelLogin = document.getElementById('panelLogin');
 const panelAlumno = document.getElementById('panelAlumno');
 
-function normaliza(txt) {
-  return txt.trim().toLowerCase();
-}
+const SUBTEMAS = {
+  'bases-culinarias': [
+    { bloque: 'Bloque 1', items: [
+      ['1.1', 'Géneros y elaboraciones culinarias sencillas'],
+      ['1.2', 'Elaboración culinaria básica'],
+      ['1.3', 'Equipos e instrumentos de medida'],
+      ['1.4', 'Tablas de temperaturas y manuales de equipos'],
+      ['1.5', 'Unidades y pesos'],
+    ]},
+    { bloque: 'Bloque 2', items: [
+      ['2.1', 'Aprovisionamiento de materias primas'],
+      ['2.2', 'Materias primas de uso común'],
+      ['2.3', 'Variedades y características físicas'],
+      ['2.4', 'Cualidades gastronómicas'],
+    ]},
+    { bloque: 'Bloque 3', items: [
+      ['3.1', 'Conocimientos generales para la elaboración de platillos'],
+      ['3.2.1', 'Carnes, aves, pescados y mariscos'],
+      ['3.2.2', 'Vegetales y frutos'],
+      ['3.2.3', 'Semillas y cereales'],
+      ['3.2.4', 'Hierbas y especias'],
+    ]},
+  ]
+};
+
+function normaliza(txt) { return txt.trim().toLowerCase(); }
 
 async function intentarLogin() {
   const materia = document.getElementById('materia').value;
   const nombre = document.getElementById('nombre').value.trim();
   const pin = document.getElementById('pin').value.trim();
-
-  if (!nombre || !pin) {
-    estado.textContent = 'Escribe tu nombre y tu PIN.';
-    return;
-  }
+  if (!nombre || !pin) { estado.textContent = 'Escribe tu nombre y tu PIN.'; return; }
   estado.textContent = 'Verificando…';
-
   try {
     const q = query(collectionGroup(db, 'alumnos'), where('pin', '==', pin));
     const snap = await getDocs(q);
-    let encontrado = null;
-    let grupoEncontrado = null;
-
+    let encontrado = null, grupoEncontrado = null;
     snap.forEach((docu) => {
       const d = docu.data();
       const rutaMateria = docu.ref.parent.parent.parent.parent.id;
@@ -99,10 +123,9 @@ async function intentarLogin() {
         grupoEncontrado = docu.ref.parent.parent.id;
       }
     });
-
     if (encontrado) {
       localStorage.setItem('jrg_alumno', JSON.stringify({ materia, grupo: grupoEncontrado, nombre: encontrado.nombre, pin }));
-      mostrarPanelAlumno(encontrado.nombre);
+      mostrarPanelAlumno(materia, encontrado.nombre);
     } else {
       estado.textContent = 'Nombre o PIN incorrecto. Verifica con tu docente.';
     }
@@ -111,10 +134,32 @@ async function intentarLogin() {
   }
 }
 
-function mostrarPanelAlumno(nombre) {
+function mostrarPanelAlumno(materia, nombre) {
   document.getElementById('nombreAlumno').textContent = nombre;
   panelLogin.style.display = 'none';
   panelAlumno.style.display = 'block';
+  renderSubtemas(materia);
+}
+
+function renderSubtemas(materia) {
+  const cont = document.getElementById('listaSubtemas');
+  cont.innerHTML = '';
+  const bloques = SUBTEMAS[materia] || [];
+  bloques.forEach(b => {
+    const div = document.createElement('div');
+    div.className = 'bloque';
+    div.innerHTML = `<h3>${b.bloque}</h3>`;
+    b.items.forEach(([num, titulo]) => {
+      const btn = document.createElement('button');
+      btn.className = 'subtema';
+      btn.textContent = `${num}  ${titulo}`;
+      btn.onclick = () => {
+        window.location.href = `actividad.html?materia=${materia}&subtema=${num}`;
+      };
+      div.appendChild(btn);
+    });
+    cont.appendChild(div);
+  });
 }
 
 document.getElementById('btnEntrar').onclick = intentarLogin;
@@ -127,7 +172,7 @@ document.getElementById('cambiar').onclick = () => {
 const guardado = localStorage.getItem('jrg_alumno');
 if (guardado) {
   const datos = JSON.parse(guardado);
-  mostrarPanelAlumno(datos.nombre);
+  mostrarPanelAlumno(datos.materia, datos.nombre);
 }
 </script>
 </body>
