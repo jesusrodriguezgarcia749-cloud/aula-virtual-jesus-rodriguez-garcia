@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Actividad — Aula Virtual JRG</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, 'Times New Roman', serif; background: #17140f; color: #f2ece1; min-height: 100vh; }
+  header { background: #f2ece1; color: #17140f; padding: 20px 24px; display: flex; align-items: center; gap: 12px; }
+  header a { color: #17140f; text-decoration: none; font-size: 1.4rem; margin-right: 8px; }
+  header h1 { font-size: 1.1rem; }
+  main { padding: 40px 24px; max-width: 620px; margin: 0 auto; }
+  .tag { color: #d99a3d; letter-spacing: 2px; font-size: 0.8rem; text-transform: uppercase; }
+  h2 { font-size: 1.4rem; margin: 10px 0 24px; line-height: 1.35; }
+  .opcion {
+    display: block; width: 100%; text-align: left; background: #201b13;
+    border: 2px solid #3a3020; border-radius: 12px; padding: 16px;
+    margin-bottom: 12px; color: #f2ece1; font-size: 1rem; font-family: inherit; cursor: pointer;
+  }
+  .opcion.correcta { border-color: #6a9955; background: #24301f; }
+  .opcion.incorrecta { border-color: #b04a3a; background: #2e1e1a; }
+  .vf-fila { display: flex; gap: 12px; }
+  .vf-fila .opcion { flex: 1; text-align: center; font-weight: bold; }
+  input[type="text"] {
+    width: 100%; padding: 14px 16px; border-radius: 10px;
+    border: 2px solid #3a3020; font-family: inherit; font-size: 1rem;
+    background: #201b13; color: #f2ece1; margin-bottom: 12px;
+  }
+  input[type="text"].correcta { border-color: #6a9955; }
+  input[type="text"].incorrecta { border-color: #b04a3a; }
+  #btnResponderTexto {
+    width: 100%; background: #d99a3d; color: #17140f; border: none;
+    padding: 12px 20px; border-radius: 30px; font-weight: bold; font-size: 1rem; cursor: pointer; margin-bottom: 12px;
+  }
+  .retro {
+    margin-top: 4px; padding: 16px; border-radius: 10px;
+    background: #201b13; color: #cfc6b6; font-size: 0.95rem; line-height: 1.5;
+  }
+  .retro.ok { border-left: 4px solid #6a9955; }
+  .retro.mal { border-left: 4px solid #b04a3a; }
+  #siguiente {
+    display: none; margin-top: 20px; width: 100%; background: #d99a3d; color: #17140f;
+    border: none; padding: 14px 20px; border-radius: 30px; font-weight: bold; font-size: 1rem; cursor: pointer;
+  }
+  .progreso { color: #a89f8d; font-size: 0.85rem; margin-bottom: 16px; }
+  #final { display: none; text-align: center; }
+  #final h2 { color: #d99a3d; }
+  #reintentar {
+    margin-top: 20px; width: 100%; background: none; border: 1px solid #6b6252;
+    color: #cfc6b6; padding: 14px 20px; border-radius: 30px; font-size: 1rem; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<header>
+  <a href="actividades.html">←</a>
+  <h1 id="tituloSubtema">Actividad</h1>
+</header>
+<main>
+  <div id="juego">
+    <div class="progreso" id="progreso"></div>
+    <div class="tag" id="tipoPregunta">Pregunta</div>
+    <h2 id="preguntaTexto"></h2>
+    <div id="opciones"></div>
+    <div class="retro" id="retro" style="display:none;"></div>
+    <button id="siguiente">Siguiente</button>
+  </div>
+
+  <div id="final">
+    <h2 id="resultadoTitulo"></h2>
+    <p id="resultadoTexto" style="color:#cfc6b6; margin-top:10px;"></p>
+    <button id="reintentar">Volver a contestar</button>
+  </div>
+</main>
+
+<script type="module">
+import { app, db } from './firebase-config.js';
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const auth = getAuth(app);
+signInAnonymously(auth);
+
+const params = new URLSearchParams(window.location.search);
+const materia = params.get('materia') || 'bases-culinarias';
+const subtema = params.get('subtema') || '1.1';
+
+// Cada pregunta tiene un "tipo": multiple | vf | completar
+const BANCO = {
+  '1.1': {
+    titulo: 'Géneros y elaboraciones culinarias sencillas',
+    preguntas: [
+      { tipo: 'multiple',
+        texto: '¿A qué figura histórica se atribuye la sistematización y codificación de la cocina a finales del siglo XIX?',
+        opciones: ['Georges Auguste Escoffier', 'Julia Child', 'Ferran Adrià', 'Paul Bocuse'],
+        correcta: 0,
+        explicacion: 'Escoffier sistematizó la cocina francesa clásica y la organización de la brigada de cocina.' },
+      { tipo: 'multiple',
+        texto: '¿Qué criterio define a un "género culinario" en la cocina profesional?',
+        opciones: ['El origen geográfico del platillo', 'La técnica, estructura o función que cumple dentro del menú', 'El precio de venta del platillo', 'El ingrediente principal usado'],
+        correcta: 1,
+        explicacion: 'El género se define por función y técnica, nunca por nacionalidad o ingrediente principal.' },
+      { tipo: 'vf',
+        texto: 'Clasificar una preparación por su ingrediente principal (ej. "todo lo de pollo") es la forma correcta de identificar su género culinario.',
+        correcta: false,
+        explicacion: 'Es un error común. El género se define por técnica y función, no por el ingrediente principal.' },
+      { tipo: 'multiple',
+        texto: '¿Qué distingue a una elaboración culinaria sencilla de una compuesta?',
+        opciones: ['La sencilla no depende de otra preparación previa para existir', 'La sencilla siempre lleva más ingredientes', 'La compuesta es siempre más barata', 'No hay ninguna diferencia real'],
+        correcta: 0,
+        explicacion: 'La compuesta se construye a partir de elementos sencillos, como una salsa derivada de una salsa madre.' },
+      { tipo: 'multiple',
+        texto: '¿Qué función cumplen los "Entremeses" (hors d\'œuvre) dentro de un menú?',
+        opciones: ['Cierran la comida con un sabor dulce', 'Son preparaciones en porciones pequeñas que abren el apetito al inicio', 'Sustituyen al plato fuerte', 'Se sirven únicamente en banquetes'],
+        correcta: 1,
+        explicacion: 'Son preparaciones frías o calientes en porciones pequeñas que abren el apetito al inicio de la comida.' },
+      { tipo: 'vf',
+        texto: 'Carnes, aves, caza y pescados conforman un solo género culinario porque todos cumplen la misma función dentro del menú: ser el plato fuerte.',
+        correcta: true,
+        explicacion: 'Correcto — se agrupan por función (plato fuerte), no por tipo de proteína.' },
+      { tipo: 'multiple',
+        texto: '¿Cuáles son las llamadas "salsas madre" de la cocina clásica?',
+        opciones: ['Cátsup, mayonesa, mostaza, soya y BBQ', 'Béchamel, velouté, española, holandesa y tomate', 'Verde, roja, blanca, negra y amarilla', 'Pesto, alfredo, boloñesa, carbonara y marinara'],
+        correcta: 1,
+        explicacion: 'Son las cinco salsas base de la cocina clásica de las que derivan muchas otras.' },
+      { tipo: 'completar',
+        texto: 'El Sorbet ocupaba la etapa número ___ del orden del menú clásico de 13 tiempos, y su propósito era limpiar el paladar antes del plato fuerte.',
+        respuesta: '7',
+        explicacion: 'El Sorbet se servía en la etapa 7, justo antes del plato fuerte principal.' },
+      { tipo: 'multiple',
+        texto: 'En la cocina mexicana contemporánea, ¿a qué género culinario pertenece un caldo de res?',
+        opciones: ['Plato fuerte', 'Al género de sopas y potajes, como "sopa clara"', 'Guarnición', 'Entremés'],
+        correcta: 1,
+        explicacion: 'Se clasifica como sopa clara, junto con consomés y caldos.' },
+      { tipo: 'multiple',
+        texto: '¿Qué diferencia operativa existía entre el antiguo service à la française y el service à la russe?',
+        opciones: [
+          'En el francés se servía por etapas; en el ruso todo junto',
+          'En el francés todos los platillos se servían simultáneamente; en el ruso por etapas',
+          'No existía ninguna diferencia real',
+          'El service à la russe no incluía postres'
+        ],
+        correcta: 1,
+        explicacion: 'El service à la russe estableció la secuencia estándar por etapas que seguimos usando hoy.' },
+      { tipo: 'multiple',
+        texto: '¿Cuáles son las dos subdivisiones clásicas dentro del género "Sopas y potajes"?',
+        opciones: ['Frías y calientes', 'Claras (consomés, caldos) y ligadas o espesas (cremas, veloutés)', 'Dulces y saladas', 'De verdura y de carne'],
+        correcta: 1,
+        explicacion: 'Se dividen en claras (consomés, caldos) y ligadas/espesas (cremas, veloutés, potajes).' },
+      { tipo: 'multiple',
+        texto: '¿Cuál de las siguientes NO es una técnica de cocción clásica del género "Huevos"?',
+        opciones: ['Poché', 'Mollet', 'Napar', 'En cocotte'],
+        correcta: 2,
+        explicacion: '"Napar" es cubrir una preparación con salsa, no una técnica de cocción de huevo. Poché, mollet y en cocotte sí lo son.' },
+      { tipo: 'multiple',
+        texto: '¿Qué tipo de preparaciones engloba el género de los "Farináceos"?',
+        opciones: ['Pastas, arroces y otros granos', 'Solo postres de harina', 'Únicamente panes', 'Salsas espesadas con harina'],
+        correcta: 0,
+        explicacion: 'Los farináceos son pastas, arroces y granos preparados como plato principal o guarnición.' },
+      { tipo: 'multiple',
+        texto: '¿Quién creó la brigada de cocina clásica y con qué propósito principal?',
+        opciones: ['Auguste Escoffier, para organizar cocinas de hotel de gran volumen', 'Julia Child, para enseñar cocina en televisión', 'Un grupo de chefs mexicanos', 'No tiene un creador conocido'],
+        correcta: 0,
+        explicacion: 'A finales del siglo XIX, Escoffier organizó el trabajo mediante roles y responsabilidades claras.' },
+      { tipo: 'multiple',
+        texto: '¿Qué distingue la función del Chef Ejecutivo de la del Sous Chef dentro de la brigada?',
+        opciones: [
+          'Son exactamente el mismo puesto con nombre distinto',
+          'El Chef Ejecutivo dirige menú, costos y personal; el Sous Chef supervisa la operación diaria y lo sustituye en su ausencia',
+          'El Sous Chef solo lava trastes',
+          'El Chef Ejecutivo nunca entra a la cocina'
+        ],
+        correcta: 1,
+        explicacion: 'El Chef Ejecutivo dirige el estándar de calidad final; el Sous Chef es el segundo al mando.' }
+    ]
+  }
+};
+
+let indice = 0;
+let aciertos = 0;
+let respondida = false;
+
+const data = BANCO[subtema];
+document.getElementById('tituloSubtema').textContent = data ? `${subtema} ${data.titulo}` : 'Subtema';
+
+function mostrarPregunta() {
+  respondida = false;
+  const p = data.preguntas[indice];
+  document.getElementById('progreso').textContent = `Pregunta ${indice + 1} de ${data.preguntas.length}`;
+  document.getElementById('preguntaTexto').textContent = p.texto;
+  document.getElementById('retro').style.display = 'none';
+  document.getElementById('siguiente').style.display = 'none';
+
+  const tipoTag = document.getElementById('tipoPregunta');
+  const cont = document.getElementById('opciones');
+  cont.innerHTML = '';
+
+  if (p.tipo === 'multiple') {
+    tipoTag.textContent = 'Opción múltiple';
+    p.opciones.forEach((op, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'opcion';
+      btn.textContent = op;
+      btn.onclick = () => responderOpcion(i);
+      cont.appendChild(btn);
+    });
+  } else if (p.tipo === 'vf') {
+    tipoTag.textContent = 'Verdadero o falso';
+    const fila = document.createElement('div');
+    fila.className = 'vf-fila';
+    const btnV = document.createElement('button');
+    btnV.className = 'opcion'; btnV.textContent = 'Verdadero';
+    btnV.onclick = () => responderVF(true);
+    const btnF = document.createElement('button');
+    btnF.className = 'opcion'; btnF.textContent = 'Falso';
+    btnF.onclick = () => responderVF(false);
+    fila.appendChild(btnV); fila.appendChild(btnF);
+    cont.appendChild(fila);
+  } else if (p.tipo === 'completar') {
+    tipoTag.textContent = 'Completa el espacio';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = 'inputCompletar';
+    input.placeholder = 'Escribe tu respuesta';
+    const btn = document.createElement('button');
+    btn.id = 'btnResponderTexto';
+    btn.textContent = 'Responder';
+    btn.onclick = () => responderCompletar();
+    cont.appendChild(input);
+    cont.appendChild(btn);
+  }
+}
+
+function mostrarRetro(esCorrecta, explicacion) {
+  const retro = document.getElementById('retro');
+  retro.style.display = 'block';
+  if (esCorrecta) {
+    aciertos++;
+    retro.className = 'retro ok';
+    retro.innerHTML = `<strong>Correcto.</strong> ${explicacion}`;
+  } else {
+    retro.className = 'retro mal';
+    retro.innerHTML = `<strong>Incorrecto.</strong> ${explicacion}`;
+  }
+  document.getElementById('siguiente').style.display = 'block';
+}
+
+function responderOpcion(i) {
+  if (respondida) return;
+  respondida = true;
+  const p = data.preguntas[indice];
+  const botones = document.querySelectorAll('#opciones .opcion');
+  botones.forEach((b, idx) => {
+    b.disabled = true;
+    if (idx === p.correcta) b.classList.add('correcta');
+    else if (idx === i) b.classList.add('incorrecta');
+  });
+  mostrarRetro(i === p.correcta, p.explicacion);
+}
+
+function responderVF(valor) {
+  if (respondida) return;
+  respondida = true;
+  const p = data.preguntas[indice];
+  const botones = document.querySelectorAll('#opciones .opcion');
+  botones.forEach((b) => {
+    b.disabled = true;
+    const esVerdadero = b.textContent === 'Verdadero';
+    if (esVerdadero === p.correcta) b.classList.add('correcta');
+    else if (esVerdadero === valor) b.classList.add('incorrecta');
+  });
+  mostrarRetro(valor === p.correcta, p.explicacion);
+}
+
+function responderCompletar() {
+  if (respondida) return;
+  respondida = true;
+  const p = data.preguntas[indice];
+  const input = document.getElementById('inputCompletar');
+  const btn = document.getElementById('btnResponderTexto');
+  input.disabled = true;
+  btn.disabled = true;
+  const respuestaOk = input.value.trim().toLowerCase() === p.respuesta.trim().toLowerCase();
+  input.classList.add(respuestaOk ? 'correcta' : 'incorrecta');
+  mostrarRetro(respuestaOk, `${p.explicacion} (Respuesta correcta: ${p.respuesta})`);
+}
+
+document.getElementById('siguiente').onclick = () => {
+  indice++;
+  if (indice < data.preguntas.length) {
+    mostrarPregunta();
+  } else {
+    mostrarFinal();
+  }
+};
+
+function mostrarFinal() {
+  document.getElementById('juego').style.display = 'none';
+  const final = document.getElementById('final');
+  final.style.display = 'block';
+  const total = data.preguntas.length;
+  if (aciertos === total) {
+    document.getElementById('resultadoTitulo').textContent = '¡Subtema completado!';
+    document.getElementById('resultadoTexto').textContent = `Respondiste ${aciertos} de ${total} correctamente. Se registró tu participación.`;
+  } else {
+    document.getElementById('resultadoTitulo').textContent = 'Te faltó alguna';
+    document.getElementById('resultadoTexto').textContent = `Respondiste ${aciertos} de ${total} correctamente. Vuelve a contestar TODAS para que cuente.`;
+  }
+}
+
+document.getElementById('reintentar').onclick = () => {
+  indice = 0; aciertos = 0;
+  document.getElementById('final').style.display = 'none';
+  document.getElementById('juego').style.display = 'block';
+  mostrarPregunta();
+};
+
+if (data) {
+  mostrarPregunta();
+} else {
+  document.getElementById('preguntaTexto').textContent = 'Este subtema todavía no tiene preguntas cargadas.';
+}
+</script>
+</body>
+</html>
