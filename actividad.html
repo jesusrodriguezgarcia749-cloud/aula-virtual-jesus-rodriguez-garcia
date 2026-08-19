@@ -6,11 +6,11 @@
 <title>Actividad — Aula Virtual JRG</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: Georgia, 'Times New Roman', serif; background: #17140f; color: #f2ece1; min-height: 100vh; }
+  body { font-family: Georgia, 'Times New Roman', serif; background: #17140f; color: #f2ece1; min-height: 100vh; overflow-x: hidden; }
   header { background: #f2ece1; color: #17140f; padding: 20px 24px; display: flex; align-items: center; gap: 12px; }
   header a { color: #17140f; text-decoration: none; font-size: 1.4rem; margin-right: 8px; }
   header h1 { font-size: 1.1rem; }
-  main { padding: 40px 24px; max-width: 620px; margin: 0 auto; }
+  main { padding: 40px 24px; max-width: 620px; margin: 0 auto; position: relative; }
   .tag { color: #d99a3d; letter-spacing: 2px; font-size: 0.8rem; text-transform: uppercase; }
   h2 { font-size: 1.4rem; margin: 10px 0 24px; line-height: 1.35; }
   .opcion {
@@ -43,13 +43,36 @@
     display: none; margin-top: 20px; width: 100%; background: #d99a3d; color: #17140f;
     border: none; padding: 14px 20px; border-radius: 30px; font-weight: bold; font-size: 1rem; cursor: pointer;
   }
-  .progreso { color: #a89f8d; font-size: 0.85rem; margin-bottom: 16px; }
+  .progreso { color: #a89f8d; font-size: 0.85rem; margin-bottom: 4px; }
+  .racha { color: #d99a3d; font-size: 0.85rem; margin-bottom: 16px; font-weight: bold; }
   #final { display: none; text-align: center; }
   #final h2 { color: #d99a3d; }
   #reintentar {
     margin-top: 20px; width: 100%; background: none; border: 1px solid #6b6252;
     color: #cfc6b6; padding: 14px 20px; border-radius: 30px; font-size: 1rem; cursor: pointer;
   }
+
+  /* Utensilios cayendo al acertar */
+  .caida {
+    position: fixed; top: -40px; font-size: 2rem;
+    animation: caer 1.6s ease-in forwards;
+    z-index: 999; pointer-events: none;
+  }
+  @keyframes caer {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(110vh) rotate(360deg); opacity: 0.2; }
+  }
+
+  /* Banner de ascenso de puesto */
+  #ascenso {
+    display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+    background: #d99a3d; color: #17140f; padding: 14px 24px; border-radius: 30px;
+    font-weight: bold; font-size: 0.95rem; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    animation: aparecer 0.4s ease-out, desaparecer 0.4s ease-in 2.6s forwards;
+    text-align: center; white-space: nowrap;
+  }
+  @keyframes aparecer { from { opacity: 0; top: 0; } to { opacity: 1; top: 20px; } }
+  @keyframes desaparecer { from { opacity: 1; } to { opacity: 0; top: 0; } }
 </style>
 </head>
 <body>
@@ -57,9 +80,13 @@
   <a href="actividades.html">←</a>
   <h1 id="tituloSubtema">Actividad</h1>
 </header>
+
+<div id="ascenso"></div>
+
 <main>
   <div id="juego">
     <div class="progreso" id="progreso"></div>
+    <div class="racha" id="racha"></div>
     <div class="tag" id="tipoPregunta">Pregunta</div>
     <h2 id="preguntaTexto"></h2>
     <div id="opciones"></div>
@@ -85,103 +112,72 @@ const params = new URLSearchParams(window.location.search);
 const materia = params.get('materia') || 'bases-culinarias';
 const subtema = params.get('subtema') || '1.1';
 
-// Cada pregunta tiene un "tipo": multiple | vf | completar
 const BANCO = {
   '1.1': {
     titulo: 'Géneros y elaboraciones culinarias sencillas',
     preguntas: [
-      { tipo: 'multiple',
-        texto: '¿A qué figura histórica se atribuye la sistematización y codificación de la cocina a finales del siglo XIX?',
-        opciones: ['Georges Auguste Escoffier', 'Julia Child', 'Ferran Adrià', 'Paul Bocuse'],
-        correcta: 0,
-        explicacion: 'Escoffier sistematizó la cocina francesa clásica y la organización de la brigada de cocina.' },
-      { tipo: 'multiple',
-        texto: '¿Qué criterio define a un "género culinario" en la cocina profesional?',
-        opciones: ['El origen geográfico del platillo', 'La técnica, estructura o función que cumple dentro del menú', 'El precio de venta del platillo', 'El ingrediente principal usado'],
-        correcta: 1,
-        explicacion: 'El género se define por función y técnica, nunca por nacionalidad o ingrediente principal.' },
-      { tipo: 'vf',
-        texto: 'Clasificar una preparación por su ingrediente principal (ej. "todo lo de pollo") es la forma correcta de identificar su género culinario.',
-        correcta: false,
-        explicacion: 'Es un error común. El género se define por técnica y función, no por el ingrediente principal.' },
-      { tipo: 'multiple',
-        texto: '¿Qué distingue a una elaboración culinaria sencilla de una compuesta?',
-        opciones: ['La sencilla no depende de otra preparación previa para existir', 'La sencilla siempre lleva más ingredientes', 'La compuesta es siempre más barata', 'No hay ninguna diferencia real'],
-        correcta: 0,
-        explicacion: 'La compuesta se construye a partir de elementos sencillos, como una salsa derivada de una salsa madre.' },
-      { tipo: 'multiple',
-        texto: '¿Qué función cumplen los "Entremeses" (hors d\'œuvre) dentro de un menú?',
-        opciones: ['Cierran la comida con un sabor dulce', 'Son preparaciones en porciones pequeñas que abren el apetito al inicio', 'Sustituyen al plato fuerte', 'Se sirven únicamente en banquetes'],
-        correcta: 1,
-        explicacion: 'Son preparaciones frías o calientes en porciones pequeñas que abren el apetito al inicio de la comida.' },
-      { tipo: 'vf',
-        texto: 'Carnes, aves, caza y pescados conforman un solo género culinario porque todos cumplen la misma función dentro del menú: ser el plato fuerte.',
-        correcta: true,
-        explicacion: 'Correcto — se agrupan por función (plato fuerte), no por tipo de proteína.' },
-      { tipo: 'multiple',
-        texto: '¿Cuáles son las llamadas "salsas madre" de la cocina clásica?',
-        opciones: ['Cátsup, mayonesa, mostaza, soya y BBQ', 'Béchamel, velouté, española, holandesa y tomate', 'Verde, roja, blanca, negra y amarilla', 'Pesto, alfredo, boloñesa, carbonara y marinara'],
-        correcta: 1,
-        explicacion: 'Son las cinco salsas base de la cocina clásica de las que derivan muchas otras.' },
-      { tipo: 'completar',
-        texto: 'El Sorbet ocupaba la etapa número ___ del orden del menú clásico de 13 tiempos, y su propósito era limpiar el paladar antes del plato fuerte.',
-        respuesta: '7',
-        explicacion: 'El Sorbet se servía en la etapa 7, justo antes del plato fuerte principal.' },
-      { tipo: 'multiple',
-        texto: 'En la cocina mexicana contemporánea, ¿a qué género culinario pertenece un caldo de res?',
-        opciones: ['Plato fuerte', 'Al género de sopas y potajes, como "sopa clara"', 'Guarnición', 'Entremés'],
-        correcta: 1,
-        explicacion: 'Se clasifica como sopa clara, junto con consomés y caldos.' },
-      { tipo: 'multiple',
-        texto: '¿Qué diferencia operativa existía entre el antiguo service à la française y el service à la russe?',
-        opciones: [
-          'En el francés se servía por etapas; en el ruso todo junto',
-          'En el francés todos los platillos se servían simultáneamente; en el ruso por etapas',
-          'No existía ninguna diferencia real',
-          'El service à la russe no incluía postres'
-        ],
-        correcta: 1,
-        explicacion: 'El service à la russe estableció la secuencia estándar por etapas que seguimos usando hoy.' },
-      { tipo: 'multiple',
-        texto: '¿Cuáles son las dos subdivisiones clásicas dentro del género "Sopas y potajes"?',
-        opciones: ['Frías y calientes', 'Claras (consomés, caldos) y ligadas o espesas (cremas, veloutés)', 'Dulces y saladas', 'De verdura y de carne'],
-        correcta: 1,
-        explicacion: 'Se dividen en claras (consomés, caldos) y ligadas/espesas (cremas, veloutés, potajes).' },
-      { tipo: 'multiple',
-        texto: '¿Cuál de las siguientes NO es una técnica de cocción clásica del género "Huevos"?',
-        opciones: ['Poché', 'Mollet', 'Napar', 'En cocotte'],
-        correcta: 2,
-        explicacion: '"Napar" es cubrir una preparación con salsa, no una técnica de cocción de huevo. Poché, mollet y en cocotte sí lo son.' },
-      { tipo: 'multiple',
-        texto: '¿Qué tipo de preparaciones engloba el género de los "Farináceos"?',
-        opciones: ['Pastas, arroces y otros granos', 'Solo postres de harina', 'Únicamente panes', 'Salsas espesadas con harina'],
-        correcta: 0,
-        explicacion: 'Los farináceos son pastas, arroces y granos preparados como plato principal o guarnición.' },
-      { tipo: 'multiple',
-        texto: '¿Quién creó la brigada de cocina clásica y con qué propósito principal?',
-        opciones: ['Auguste Escoffier, para organizar cocinas de hotel de gran volumen', 'Julia Child, para enseñar cocina en televisión', 'Un grupo de chefs mexicanos', 'No tiene un creador conocido'],
-        correcta: 0,
-        explicacion: 'A finales del siglo XIX, Escoffier organizó el trabajo mediante roles y responsabilidades claras.' },
-      { tipo: 'multiple',
-        texto: '¿Qué distingue la función del Chef Ejecutivo de la del Sous Chef dentro de la brigada?',
-        opciones: [
-          'Son exactamente el mismo puesto con nombre distinto',
-          'El Chef Ejecutivo dirige menú, costos y personal; el Sous Chef supervisa la operación diaria y lo sustituye en su ausencia',
-          'El Sous Chef solo lava trastes',
-          'El Chef Ejecutivo nunca entra a la cocina'
-        ],
-        correcta: 1,
-        explicacion: 'El Chef Ejecutivo dirige el estándar de calidad final; el Sous Chef es el segundo al mando.' }
+      { tipo: 'multiple', texto: '¿A qué figura histórica se atribuye la sistematización y codificación de la cocina a finales del siglo XIX?', opciones: ['Georges Auguste Escoffier', 'Julia Child', 'Ferran Adrià', 'Paul Bocuse'], correcta: 0, explicacion: 'Escoffier sistematizó la cocina francesa clásica y la organización de la brigada de cocina.' },
+      { tipo: 'multiple', texto: '¿Qué criterio define a un "género culinario" en la cocina profesional?', opciones: ['El origen geográfico del platillo', 'La técnica, estructura o función que cumple dentro del menú', 'El precio de venta del platillo', 'El ingrediente principal usado'], correcta: 1, explicacion: 'El género se define por función y técnica, nunca por nacionalidad o ingrediente principal.' },
+      { tipo: 'vf', texto: 'Clasificar una preparación por su ingrediente principal (ej. "todo lo de pollo") es la forma correcta de identificar su género culinario.', correcta: false, explicacion: 'Es un error común. El género se define por técnica y función, no por el ingrediente principal.' },
+      { tipo: 'multiple', texto: '¿Qué distingue a una elaboración culinaria sencilla de una compuesta?', opciones: ['La sencilla no depende de otra preparación previa para existir', 'La sencilla siempre lleva más ingredientes', 'La compuesta es siempre más barata', 'No hay ninguna diferencia real'], correcta: 0, explicacion: 'La compuesta se construye a partir de elementos sencillos, como una salsa derivada de una salsa madre.' },
+      { tipo: 'multiple', texto: '¿Qué función cumplen los "Entremeses" (hors d\'œuvre) dentro de un menú?', opciones: ['Cierran la comida con un sabor dulce', 'Son preparaciones en porciones pequeñas que abren el apetito al inicio', 'Sustituyen al plato fuerte', 'Se sirven únicamente en banquetes'], correcta: 1, explicacion: 'Son preparaciones frías o calientes en porciones pequeñas que abren el apetito al inicio de la comida.' },
+      { tipo: 'vf', texto: 'Carnes, aves, caza y pescados conforman un solo género culinario porque todos cumplen la misma función dentro del menú: ser el plato fuerte.', correcta: true, explicacion: 'Correcto — se agrupan por función (plato fuerte), no por tipo de proteína.' },
+      { tipo: 'multiple', texto: '¿Cuáles son las llamadas "salsas madre" de la cocina clásica?', opciones: ['Cátsup, mayonesa, mostaza, soya y BBQ', 'Béchamel, velouté, española, holandesa y tomate', 'Verde, roja, blanca, negra y amarilla', 'Pesto, alfredo, boloñesa, carbonara y marinara'], correcta: 1, explicacion: 'Son las cinco salsas base de la cocina clásica de las que derivan muchas otras.' },
+      { tipo: 'completar', texto: 'El Sorbet ocupaba la etapa número ___ del orden del menú clásico de 13 tiempos, y su propósito era limpiar el paladar antes del plato fuerte.', respuesta: '7', explicacion: 'El Sorbet se servía en la etapa 7, justo antes del plato fuerte principal.' },
+      { tipo: 'multiple', texto: 'En la cocina mexicana contemporánea, ¿a qué género culinario pertenece un caldo de res?', opciones: ['Plato fuerte', 'Al género de sopas y potajes, como "sopa clara"', 'Guarnición', 'Entremés'], correcta: 1, explicacion: 'Se clasifica como sopa clara, junto con consomés y caldos.' },
+      { tipo: 'multiple', texto: '¿Qué diferencia operativa existía entre el antiguo service à la française y el service à la russe?', opciones: ['En el francés se servía por etapas; en el ruso todo junto', 'En el francés todos los platillos se servían simultáneamente; en el ruso por etapas', 'No existía ninguna diferencia real', 'El service à la russe no incluía postres'], correcta: 1, explicacion: 'El service à la russe estableció la secuencia estándar por etapas que seguimos usando hoy.' },
+      { tipo: 'multiple', texto: '¿Cuáles son las dos subdivisiones clásicas dentro del género "Sopas y potajes"?', opciones: ['Frías y calientes', 'Claras (consomés, caldos) y ligadas o espesas (cremas, veloutés)', 'Dulces y saladas', 'De verdura y de carne'], correcta: 1, explicacion: 'Se dividen en claras (consomés, caldos) y ligadas/espesas (cremas, veloutés, potajes).' },
+      { tipo: 'multiple', texto: '¿Cuál de las siguientes NO es una técnica de cocción clásica del género "Huevos"?', opciones: ['Poché', 'Mollet', 'Napar', 'En cocotte'], correcta: 2, explicacion: '"Napar" es cubrir una preparación con salsa, no una técnica de cocción de huevo. Poché, mollet y en cocotte sí lo son.' },
+      { tipo: 'multiple', texto: '¿Qué tipo de preparaciones engloba el género de los "Farináceos"?', opciones: ['Pastas, arroces y otros granos', 'Solo postres de harina', 'Únicamente panes', 'Salsas espesadas con harina'], correcta: 0, explicacion: 'Los farináceos son pastas, arroces y granos preparados como plato principal o guarnición.' },
+      { tipo: 'multiple', texto: '¿Quién creó la brigada de cocina clásica y con qué propósito principal?', opciones: ['Auguste Escoffier, para organizar cocinas de hotel de gran volumen', 'Julia Child, para enseñar cocina en televisión', 'Un grupo de chefs mexicanos', 'No tiene un creador conocido'], correcta: 0, explicacion: 'A finales del siglo XIX, Escoffier organizó el trabajo mediante roles y responsabilidades claras.' },
+      { tipo: 'multiple', texto: '¿Qué distingue la función del Chef Ejecutivo de la del Sous Chef dentro de la brigada?', opciones: ['Son exactamente el mismo puesto con nombre distinto', 'El Chef Ejecutivo dirige menú, costos y personal; el Sous Chef supervisa la operación diaria y lo sustituye en su ausencia', 'El Sous Chef solo lava trastes', 'El Chef Ejecutivo nunca entra a la cocina'], correcta: 1, explicacion: 'El Chef Ejecutivo dirige el estándar de calidad final; el Sous Chef es el segundo al mando.' }
     ]
   }
 };
 
+const UTENSILIOS = ['🍳','🔪','🥄','🥣','🍽️','🥘','🧂','🥢'];
+const PUESTOS = ['Steward', 'Ayudante de cocina', 'Commis', 'Chef de partida', 'Sous Chef', 'Chef Ejecutivo', 'Dueño del restaurante'];
+
 let indice = 0;
 let aciertos = 0;
 let respondida = false;
+let racha = 0;
+let puestoActual = 0;
 
 const data = BANCO[subtema];
 document.getElementById('tituloSubtema').textContent = data ? `${subtema} ${data.titulo}` : 'Subtema';
+
+function actualizarRacha() {
+  document.getElementById('racha').textContent = racha > 0 ? `🔥 Racha: ${racha}` : '';
+}
+
+function lanzarUtensilios() {
+  const cantidad = 6;
+  for (let i = 0; i < cantidad; i++) {
+    const span = document.createElement('span');
+    span.className = 'caida';
+    span.textContent = UTENSILIOS[Math.floor(Math.random() * UTENSILIOS.length)];
+    span.style.left = Math.random() * 100 + 'vw';
+    span.style.animationDelay = (Math.random() * 0.3) + 's';
+    document.body.appendChild(span);
+    setTimeout(() => span.remove(), 2000);
+  }
+}
+
+function revisarAscenso() {
+  // Sube de puesto cada 2 aciertos seguidos, hasta el último puesto
+  const nuevoPuesto = Math.min(Math.floor(racha / 2), PUESTOS.length - 1);
+  if (nuevoPuesto > puestoActual) {
+    puestoActual = nuevoPuesto;
+    const banner = document.getElementById('ascenso');
+    banner.textContent = `🎉 ¡Ascenso! Ahora eres: ${PUESTOS[puestoActual]}`;
+    banner.style.display = 'block';
+    banner.style.animation = 'none';
+    void banner.offsetWidth;
+    banner.style.animation = 'aparecer 0.4s ease-out, desaparecer 0.4s ease-in 2.6s forwards';
+    setTimeout(() => { banner.style.display = 'none'; }, 3200);
+  }
+}
 
 function mostrarPregunta() {
   respondida = false;
@@ -190,6 +186,7 @@ function mostrarPregunta() {
   document.getElementById('preguntaTexto').textContent = p.texto;
   document.getElementById('retro').style.display = 'none';
   document.getElementById('siguiente').style.display = 'none';
+  actualizarRacha();
 
   const tipoTag = document.getElementById('tipoPregunta');
   const cont = document.getElementById('opciones');
@@ -231,11 +228,19 @@ function mostrarPregunta() {
   }
 }
 
-function mostrarRetro(esCorrecta, explicacion) {
+function procesarResultado(esCorrecta, explicacion) {
+  if (esCorrecta) {
+    aciertos++;
+    racha++;
+    lanzarUtensilios();
+    revisarAscenso();
+  } else {
+    racha = 0;
+  }
+  actualizarRacha();
   const retro = document.getElementById('retro');
   retro.style.display = 'block';
   if (esCorrecta) {
-    aciertos++;
     retro.className = 'retro ok';
     retro.innerHTML = `<strong>Correcto.</strong> ${explicacion}`;
   } else {
@@ -255,7 +260,7 @@ function responderOpcion(i) {
     if (idx === p.correcta) b.classList.add('correcta');
     else if (idx === i) b.classList.add('incorrecta');
   });
-  mostrarRetro(i === p.correcta, p.explicacion);
+  procesarResultado(i === p.correcta, p.explicacion);
 }
 
 function responderVF(valor) {
@@ -269,7 +274,7 @@ function responderVF(valor) {
     if (esVerdadero === p.correcta) b.classList.add('correcta');
     else if (esVerdadero === valor) b.classList.add('incorrecta');
   });
-  mostrarRetro(valor === p.correcta, p.explicacion);
+  procesarResultado(valor === p.correcta, p.explicacion);
 }
 
 function responderCompletar() {
@@ -282,7 +287,7 @@ function responderCompletar() {
   btn.disabled = true;
   const respuestaOk = input.value.trim().toLowerCase() === p.respuesta.trim().toLowerCase();
   input.classList.add(respuestaOk ? 'correcta' : 'incorrecta');
-  mostrarRetro(respuestaOk, `${p.explicacion} (Respuesta correcta: ${p.respuesta})`);
+  procesarResultado(respuestaOk, `${p.explicacion} (Respuesta correcta: ${p.respuesta})`);
 }
 
 document.getElementById('siguiente').onclick = () => {
@@ -301,7 +306,7 @@ function mostrarFinal() {
   const total = data.preguntas.length;
   if (aciertos === total) {
     document.getElementById('resultadoTitulo').textContent = '¡Subtema completado!';
-    document.getElementById('resultadoTexto').textContent = `Respondiste ${aciertos} de ${total} correctamente. Se registró tu participación.`;
+    document.getElementById('resultadoTexto').textContent = `Respondiste ${aciertos} de ${total} correctamente. Puesto alcanzado: ${PUESTOS[puestoActual]}. Se registró tu participación.`;
   } else {
     document.getElementById('resultadoTitulo').textContent = 'Te faltó alguna';
     document.getElementById('resultadoTexto').textContent = `Respondiste ${aciertos} de ${total} correctamente. Vuelve a contestar TODAS para que cuente.`;
@@ -309,7 +314,7 @@ function mostrarFinal() {
 }
 
 document.getElementById('reintentar').onclick = () => {
-  indice = 0; aciertos = 0;
+  indice = 0; aciertos = 0; racha = 0; puestoActual = 0;
   document.getElementById('final').style.display = 'none';
   document.getElementById('juego').style.display = 'block';
   mostrarPregunta();
