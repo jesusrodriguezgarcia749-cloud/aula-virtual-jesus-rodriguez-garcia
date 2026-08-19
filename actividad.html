@@ -39,6 +39,7 @@
   }
   .retro.ok { border-left: 4px solid #6a9955; }
   .retro.mal { border-left: 4px solid #b04a3a; }
+  .retro .frase { display: block; color: #d99a3d; font-weight: bold; margin-bottom: 6px; font-size: 1rem; }
   #siguiente {
     display: none; margin-top: 20px; width: 100%; background: #d99a3d; color: #17140f;
     border: none; padding: 14px 20px; border-radius: 30px; font-weight: bold; font-size: 1rem; cursor: pointer;
@@ -52,7 +53,6 @@
     color: #cfc6b6; padding: 14px 20px; border-radius: 30px; font-size: 1rem; cursor: pointer;
   }
 
-  /* Utensilios cayendo al acertar */
   .caida {
     position: fixed; top: -40px; font-size: 2rem;
     animation: caer 1.6s ease-in forwards;
@@ -63,12 +63,10 @@
     100% { transform: translateY(110vh) rotate(360deg); opacity: 0.2; }
   }
 
-  /* Banner de ascenso de puesto */
   #ascenso {
     display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
     background: #d99a3d; color: #17140f; padding: 14px 24px; border-radius: 30px;
     font-weight: bold; font-size: 0.95rem; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-    animation: aparecer 0.4s ease-out, desaparecer 0.4s ease-in 2.6s forwards;
     text-align: center; white-space: nowrap;
   }
   @keyframes aparecer { from { opacity: 0; top: 0; } to { opacity: 1; top: 20px; } }
@@ -138,14 +136,63 @@ const BANCO = {
 const UTENSILIOS = ['🍳','🔪','🥄','🥣','🍽️','🥘','🧂','🥢'];
 const PUESTOS = ['Steward', 'Ayudante de cocina', 'Commis', 'Chef de partida', 'Sous Chef', 'Chef Ejecutivo', 'Dueño del restaurante'];
 
+const FRASES_BIEN = [
+  '¡Excelente!', '¡Vas que vuelas!', '¡Eres un crack!', '¡Así se cocina!',
+  '¡De chef!', '¡Perfecto!', '¡Sigue así!', '¡Tienes buen sazón para esto!'
+];
+const FRASES_MAL = [
+  'No te rindas.', 'Casi lo tienes.', 'La próxima la clavas.',
+  'Todo buen chef se equivoca antes de dominar la técnica.', 'Sigue practicando.'
+];
+
 let indice = 0;
 let aciertos = 0;
 let respondida = false;
 let racha = 0;
 let puestoActual = 0;
+let audioCtx = null;
 
-const data = BANCO[subtema];
-document.getElementById('tituloSubtema').textContent = data ? `${subtema} ${data.titulo}` : 'Subtema';
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function tono(frecuencia, duracion, tipoOnda = 'sine', volumen = 0.15) {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = tipoOnda;
+    osc.frequency.value = frecuencia;
+    gain.gain.value = volumen;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duracion);
+    osc.stop(ctx.currentTime + duracion);
+  } catch (e) { /* audio no disponible, seguimos sin sonido */ }
+}
+
+function sonidoAcierto(nivelCombo) {
+  // Sube de tono según la racha, como un "combo"
+  const base = 523 + Math.min(nivelCombo, 6) * 40; // do central y sube
+  tono(base, 0.12, 'triangle', 0.18);
+  setTimeout(() => tono(base * 1.25, 0.15, 'triangle', 0.18), 90);
+}
+
+function sonidoError() {
+  tono(180, 0.25, 'sawtooth', 0.12);
+}
+
+function sonidoAscenso() {
+  [523, 659, 784, 1046].forEach((f, i) => {
+    setTimeout(() => tono(f, 0.18, 'triangle', 0.2), i * 100);
+  });
+}
+
+function vibrar(patron) {
+  if (navigator.vibrate) navigator.vibrate(patron);
+}
 
 function actualizarRacha() {
   document.getElementById('racha').textContent = racha > 0 ? `🔥 Racha: ${racha}` : '';
@@ -165,10 +212,11 @@ function lanzarUtensilios() {
 }
 
 function revisarAscenso() {
-  // Sube de puesto cada 2 aciertos seguidos, hasta el último puesto
   const nuevoPuesto = Math.min(Math.floor(racha / 2), PUESTOS.length - 1);
   if (nuevoPuesto > puestoActual) {
     puestoActual = nuevoPuesto;
+    sonidoAscenso();
+    vibrar([80, 40, 80, 40, 150]);
     const banner = document.getElementById('ascenso');
     banner.textContent = `🎉 ¡Ascenso! Ahora eres: ${PUESTOS[puestoActual]}`;
     banner.style.display = 'block';
@@ -229,24 +277,27 @@ function mostrarPregunta() {
 }
 
 function procesarResultado(esCorrecta, explicacion) {
-  if (esCorrecta) {
-    aciertos++;
-    racha++;
-    lanzarUtensilios();
-    revisarAscenso();
-  } else {
-    racha = 0;
-  }
-  actualizarRacha();
   const retro = document.getElementById('retro');
   retro.style.display = 'block';
   if (esCorrecta) {
+    aciertos++;
+    racha++;
+    sonidoAcierto(racha);
+    vibrar(40);
+    lanzarUtensilios();
+    revisarAscenso();
+    const frase = FRASES_BIEN[Math.floor(Math.random() * FRASES_BIEN.length)];
     retro.className = 'retro ok';
-    retro.innerHTML = `<strong>Correcto.</strong> ${explicacion}`;
+    retro.innerHTML = `<span class="frase">${frase}</span><strong>Correcto.</strong> ${explicacion}`;
   } else {
+    racha = 0;
+    sonidoError();
+    vibrar([60, 40, 60]);
+    const frase = FRASES_MAL[Math.floor(Math.random() * FRASES_MAL.length)];
     retro.className = 'retro mal';
-    retro.innerHTML = `<strong>Incorrecto.</strong> ${explicacion}`;
+    retro.innerHTML = `<span class="frase">${frase}</span><strong>Incorrecto.</strong> ${explicacion}`;
   }
+  actualizarRacha();
   document.getElementById('siguiente').style.display = 'block';
 }
 
@@ -319,6 +370,9 @@ document.getElementById('reintentar').onclick = () => {
   document.getElementById('juego').style.display = 'block';
   mostrarPregunta();
 };
+
+const data = BANCO[subtema];
+document.getElementById('tituloSubtema').textContent = data ? `${subtema} ${data.titulo}` : 'Subtema';
 
 if (data) {
   mostrarPregunta();
