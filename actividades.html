@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Actividades — Aula Virtual JRG</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, 'Times New Roman', serif; background: #17140f; color: #f2ece1; min-height: 100vh; }
+  header { background: #f2ece1; color: #17140f; padding: 20px 24px; display: flex; align-items: center; gap: 12px; }
+  header a { color: #17140f; text-decoration: none; font-size: 1.4rem; margin-right: 8px; }
+  header h1 { font-size: 1.2rem; }
+  main { padding: 40px 24px; max-width: 480px; margin: 0 auto; }
+  .tag { color: #d99a3d; letter-spacing: 2px; font-size: 0.8rem; text-transform: uppercase; }
+  h2 { font-size: 1.8rem; margin: 10px 0 24px; }
+  label { display: block; font-size: 0.85rem; color: #a89f8d; margin-bottom: 4px; margin-top: 16px; }
+  input {
+    width: 100%; padding: 14px 16px; border-radius: 10px;
+    border: 1px solid #3a3020; font-family: inherit; font-size: 1rem;
+    background: #201b13; color: #f2ece1;
+  }
+  button {
+    margin-top: 24px; width: 100%; background: #d99a3d; color: #17140f; border: none;
+    padding: 14px 20px; border-radius: 30px; font-weight: bold; font-size: 1rem; cursor: pointer;
+  }
+  #estado { margin-top: 16px; padding: 12px 14px; border-radius: 10px; font-size: 0.9rem; background: #2a2013; color: #cfc6b6; }
+  #panelAlumno { display: none; }
+  #panelAlumno .saludo { font-size: 1.4rem; margin-bottom: 20px; }
+  #cambiar { background: none; border: 1px solid #6b6252; color: #cfc6b6; margin-top: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <a href="index.html">←</a>
+  <h1>Actividades</h1>
+</header>
+<main>
+  <div id="panelLogin">
+    <div class="tag">Bases Culinarias</div>
+    <h2>Ingresa tus datos</h2>
+    <label>Grupo</label>
+    <input id="grupo" type="text" placeholder="1A" value="1A">
+    <label>Tu nombre completo</label>
+    <input id="nombre" type="text" placeholder="Como te registró tu docente">
+    <label>PIN</label>
+    <input id="pin" type="text" inputmode="numeric" maxlength="4" placeholder="4 dígitos">
+    <button id="btnEntrar">Entrar</button>
+    <div id="estado"></div>
+  </div>
+
+  <div id="panelAlumno">
+    <div class="saludo">Hola, <span id="nombreAlumno"></span></div>
+    <p style="color:#cfc6b6;">Las actividades por subtema estarán disponibles aquí en el siguiente paso de construcción.</p>
+    <button id="cambiar">Cambiar de alumno</button>
+  </div>
+</main>
+
+<script type="module">
+import { app, db } from './firebase-config.js';
+import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const materia = 'bases-culinarias';
+const auth = getAuth(app);
+signInAnonymously(auth);
+
+const estado = document.getElementById('estado');
+const panelLogin = document.getElementById('panelLogin');
+const panelAlumno = document.getElementById('panelAlumno');
+
+function normaliza(txt) {
+  return txt.trim().toLowerCase();
+}
+
+async function intentarLogin() {
+  const grupo = document.getElementById('grupo').value.trim() || '1A';
+  const nombre = document.getElementById('nombre').value.trim();
+  const pin = document.getElementById('pin').value.trim();
+
+  if (!nombre || !pin) {
+    estado.textContent = 'Escribe tu nombre y tu PIN.';
+    return;
+  }
+  estado.textContent = 'Verificando…';
+
+  try {
+    const ref = collection(db, 'materias', materia, 'grupos', grupo, 'alumnos');
+    const snap = await getDocs(ref);
+    let encontrado = null;
+    snap.forEach((docu) => {
+      const d = docu.data();
+      if (normaliza(d.nombre) === normaliza(nombre) && String(d.pin) === pin) {
+        encontrado = d;
+      }
+    });
+
+    if (encontrado) {
+      localStorage.setItem('jrg_alumno', JSON.stringify({ materia, grupo, nombre: encontrado.nombre, pin }));
+      mostrarPanelAlumno(encontrado.nombre);
+    } else {
+      estado.textContent = 'Nombre o PIN incorrecto. Verifica con tu docente.';
+    }
+  } catch (err) {
+    estado.textContent = 'Error al verificar: ' + err.message;
+  }
+}
+
+function mostrarPanelAlumno(nombre) {
+  document.getElementById('nombreAlumno').textContent = nombre;
+  panelLogin.style.display = 'none';
+  panelAlumno.style.display = 'block';
+}
+
+document.getElementById('btnEntrar').onclick = intentarLogin;
+document.getElementById('cambiar').onclick = () => {
+  localStorage.removeItem('jrg_alumno');
+  panelAlumno.style.display = 'none';
+  panelLogin.style.display = 'block';
+};
+
+const guardado = localStorage.getItem('jrg_alumno');
+if (guardado) {
+  const datos = JSON.parse(guardado);
+  mostrarPanelAlumno(datos.nombre);
+}
+</script>
+</body>
+</html>
