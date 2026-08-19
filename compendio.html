@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compendio — Aula Virtual JRG</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, 'Times New Roman', serif; background: #17140f; color: #f2ece1; min-height: 100vh; }
+  header { background: #f2ece1; color: #17140f; padding: 20px 24px; display: flex; align-items: center; gap: 12px; }
+  header a { color: #17140f; text-decoration: none; font-size: 1.4rem; margin-right: 8px; }
+  header h1 { font-size: 1.2rem; }
+  main { padding: 40px 24px; max-width: 720px; margin: 0 auto; }
+  .tag { color: #d99a3d; letter-spacing: 2px; font-size: 0.8rem; text-transform: uppercase; }
+  h2 { font-size: 2rem; margin: 10px 0 8px; }
+  p.lead { color: #cfc6b6; margin-bottom: 32px; }
+  .bloque { margin-bottom: 32px; }
+  .bloque h3 { color: #d99a3d; font-size: 1.1rem; margin-bottom: 12px; border-bottom: 1px solid #3a3020; padding-bottom: 6px; }
+  .subtema {
+    display: block; background: #201b13; border: 1px solid #3a3020;
+    border-radius: 10px; padding: 14px 16px; margin-bottom: 10px;
+    text-decoration: none; color: #f2ece1; font-size: 0.98rem;
+  }
+  .subtema span { display: block; color: #8a8070; font-size: 0.8rem; margin-top: 2px; }
+</style>
+</head>
+<body>
+<header>
+  <a href="index.html">←</a>
+  <h1 id="tituloMateria">Compendio</h1>
+</header>
+<main>
+  <div class="tag">Compendio</div>
+  <h2>Elige un subtema</h2>
+  <p class="lead">Toca cualquier subtema para abrir su contenido.</p>
+  <div id="contenedorBloques"></div>
+</main>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const materia = params.get('materia') || 'bases-culinarias';
+
+const DATOS = {
+  'bases-culinarias': {
+    titulo: 'Bases Culinarias',
+    bloques: [
+      { nombre: 'Bloque 1 — Conceptos y definiciones de cocina', subtemas: [
+        ['1.1', 'Géneros y elaboraciones culinarias sencillas'],
+        ['1.2', 'Elaboración culinaria básica'],
+        ['1.3', 'Equipos e instrumentos de medida'],
+        ['1.4', 'Tablas de temperaturas y manuales de equipos'],
+        ['1.5', 'Unidades y pesos'],
+      ]},
+      { nombre: 'Bloque 2 — Conocimiento y manipulación de materias primas', subtemas: [
+        ['2.1', 'Aprovisionamiento de materias primas'],
+        ['2.2', 'Materias primas de uso común'],
+        ['2.3', 'Variedades y características físicas'],
+        ['2.4', 'Cualidades gastronómicas'],
+      ]},
+      { nombre: 'Bloque 3 — Desarrollo de habilidades para la cocina', subtemas: [
+        ['3.1', 'Conocimientos generales para la elaboración de platillos'],
+        ['3.2.1', 'Carnes, aves, pescados y mariscos'],
+        ['3.2.2', 'Vegetales y frutos'],
+        ['3.2.3', 'Semillas y cereales'],
+        ['3.2.4', 'Hierbas y especias'],
+      ]},
+    ]
+  }
+};
+
+const info = DATOS[materia];
+document.getElementById('tituloMateria').textContent = info ? info.titulo : 'Compendio';
+
+const cont = document.getElementById('contenedorBloques');
+if (info) {
+  info.bloques.forEach(bloque => {
+    const div = document.createElement('div');
+    div.className = 'bloque';
+    div.innerHTML = `<h3>${bloque.nombre}</h3>`;
+    bloque.subtemas.forEach(([num, nombre]) => {
+      const a = document.createElement('a');
+      a.className = 'subtema';
+      a.href = `tema.html?materia=${materia}&subtema=${num}`;
+      a.innerHTML = `${nombre}<span>Subtema ${num}</span>`;
+      div.appendChild(a);
+    });
+    cont.appendChild(div);
+  });
+} else {
+  cont.innerHTML = '<p>Materia no encontrada.</p>';
+}
+</script>
+</body>
+</html>
