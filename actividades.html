@@ -14,7 +14,7 @@
   .tag { color: #d99a3d; letter-spacing: 2px; font-size: 0.8rem; text-transform: uppercase; }
   h2 { font-size: 1.8rem; margin: 10px 0 24px; }
   label { display: block; font-size: 0.85rem; color: #a89f8d; margin-bottom: 4px; margin-top: 16px; }
-  input {
+  select, input {
     width: 100%; padding: 14px 16px; border-radius: 10px;
     border: 1px solid #3a3020; font-family: inherit; font-size: 1rem;
     background: #201b13; color: #f2ece1;
@@ -36,10 +36,13 @@
 </header>
 <main>
   <div id="panelLogin">
-    <div class="tag">Bases Culinarias</div>
+    <div class="tag">Aula Virtual</div>
     <h2>Ingresa tus datos</h2>
-    <label>Grupo</label>
-    <input id="grupo" type="text" placeholder="1A" value="1A">
+    <label>Materia</label>
+    <select id="materia">
+      <option value="bases-culinarias">Bases Culinarias</option>
+      <option value="expresion-oral-escrita">Expresión Oral y Escrita</option>
+    </select>
     <label>Tu nombre completo</label>
     <input id="nombre" type="text" placeholder="Como te registró tu docente">
     <label>PIN</label>
@@ -57,10 +60,9 @@
 
 <script type="module">
 import { app, db } from './firebase-config.js';
-import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collectionGroup, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-const materia = 'bases-culinarias';
 const auth = getAuth(app);
 signInAnonymously(auth);
 
@@ -73,7 +75,7 @@ function normaliza(txt) {
 }
 
 async function intentarLogin() {
-  const grupo = document.getElementById('grupo').value.trim() || '1A';
+  const materia = document.getElementById('materia').value;
   const nombre = document.getElementById('nombre').value.trim();
   const pin = document.getElementById('pin').value.trim();
 
@@ -84,18 +86,22 @@ async function intentarLogin() {
   estado.textContent = 'Verificando…';
 
   try {
-    const ref = collection(db, 'materias', materia, 'grupos', grupo, 'alumnos');
-    const snap = await getDocs(ref);
+    const q = query(collectionGroup(db, 'alumnos'), where('pin', '==', pin));
+    const snap = await getDocs(q);
     let encontrado = null;
+    let grupoEncontrado = null;
+
     snap.forEach((docu) => {
       const d = docu.data();
-      if (normaliza(d.nombre) === normaliza(nombre) && String(d.pin) === pin) {
+      const rutaMateria = docu.ref.parent.parent.parent.parent.id;
+      if (rutaMateria === materia && normaliza(d.nombre) === normaliza(nombre)) {
         encontrado = d;
+        grupoEncontrado = docu.ref.parent.parent.id;
       }
     });
 
     if (encontrado) {
-      localStorage.setItem('jrg_alumno', JSON.stringify({ materia, grupo, nombre: encontrado.nombre, pin }));
+      localStorage.setItem('jrg_alumno', JSON.stringify({ materia, grupo: grupoEncontrado, nombre: encontrado.nombre, pin }));
       mostrarPanelAlumno(encontrado.nombre);
     } else {
       estado.textContent = 'Nombre o PIN incorrecto. Verifica con tu docente.';
