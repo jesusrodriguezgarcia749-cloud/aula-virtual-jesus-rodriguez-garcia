@@ -28,7 +28,16 @@
   #panelAlumno .saludo { font-size: 1.4rem; margin-bottom: 4px; }
   #panelAlumno .grupo { color: #a89f8d; font-size: 0.9rem; margin-bottom: 24px; }
   #cambiar { background: none; border: 1px solid #6b6252; color: #cfc6b6; margin-top: 24px; }
-  .bloque h3 { color: #d99a3d; font-size: 1rem; margin: 20px 0 10px; border-bottom: 1px solid #3a3020; padding-bottom: 6px; }
+
+  .pestañas { display: flex; gap: 8px; margin-bottom: 20px; }
+  .pestaña {
+    flex: 1; text-align: center; padding: 10px 4px; border-radius: 20px;
+    background: #201b13; border: 1px solid #3a3020; color: #a89f8d;
+    font-size: 0.85rem; font-weight: bold; cursor: pointer;
+  }
+  .pestaña.activa { background: #d99a3d; color: #17140f; border-color: #d99a3d; }
+  .bloqueContenido { display: none; }
+  .bloqueContenido.activo { display: block; }
   .subtema {
     display: block; width: 100%; text-align: left; background: #201b13; border: 1px solid #3a3020;
     border-radius: 10px; padding: 14px 16px; margin-bottom: 10px;
@@ -61,7 +70,8 @@
   <div id="panelAlumno">
     <div class="saludo">Hola, <span id="nombreAlumno"></span></div>
     <div class="grupo">Bases Culinarias</div>
-    <div id="listaSubtemas"></div>
+    <div class="pestañas" id="pestañas"></div>
+    <div id="contenidoBloques"></div>
     <button id="cambiar">Cambiar de alumno</button>
   </div>
 </main>
@@ -138,28 +148,40 @@ function mostrarPanelAlumno(materia, nombre) {
   document.getElementById('nombreAlumno').textContent = nombre;
   panelLogin.style.display = 'none';
   panelAlumno.style.display = 'block';
-  renderSubtemas(materia);
+  renderPestañas(materia);
 }
 
-function renderSubtemas(materia) {
-  const cont = document.getElementById('listaSubtemas');
-  cont.innerHTML = '';
+function renderPestañas(materia) {
   const bloques = SUBTEMAS[materia] || [];
-  bloques.forEach(b => {
-    const div = document.createElement('div');
-    div.className = 'bloque';
-    div.innerHTML = `<h3>${b.bloque}</h3>`;
+  const pestañasCont = document.getElementById('pestañas');
+  const contenidoCont = document.getElementById('contenidoBloques');
+  pestañasCont.innerHTML = '';
+  contenidoCont.innerHTML = '';
+
+  bloques.forEach((b, idx) => {
+    const tab = document.createElement('div');
+    tab.className = 'pestaña' + (idx === 0 ? ' activa' : '');
+    tab.textContent = b.bloque.replace('Bloque ', 'B');
+    tab.onclick = () => cambiarPestaña(idx);
+    pestañasCont.appendChild(tab);
+
+    const cont = document.createElement('div');
+    cont.className = 'bloqueContenido' + (idx === 0 ? ' activo' : '');
+    cont.id = `bloque${idx}`;
     b.items.forEach(([num, titulo]) => {
       const btn = document.createElement('button');
       btn.className = 'subtema';
       btn.textContent = `${num}  ${titulo}`;
-      btn.onclick = () => {
-        window.location.href = `actividad.html?materia=${materia}&subtema=${num}`;
-      };
-      div.appendChild(btn);
+      btn.onclick = () => { window.location.href = `actividad.html?materia=${materia}&subtema=${num}`; };
+      cont.appendChild(btn);
     });
-    cont.appendChild(div);
+    contenidoCont.appendChild(cont);
   });
+}
+
+function cambiarPestaña(idx) {
+  document.querySelectorAll('.pestaña').forEach((p, i) => p.classList.toggle('activa', i === idx));
+  document.querySelectorAll('.bloqueContenido').forEach((c, i) => c.classList.toggle('activo', i === idx));
 }
 
 document.getElementById('btnEntrar').onclick = intentarLogin;
