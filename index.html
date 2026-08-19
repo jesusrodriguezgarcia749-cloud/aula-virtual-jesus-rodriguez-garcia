@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aula Virtual — Jesús Rodríguez García</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Georgia, 'Times New Roman', serif;
+    background: #17140f;
+    color: #f2ece1;
+    min-height: 100vh;
+  }
+  header {
+    background: #f2ece1;
+    color: #17140f;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  header .logo {
+    width: 42px; height: 42px;
+    background: #17140f;
+    color: #d99a3d;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold; border-radius: 8px;
+  }
+  header h1 { font-size: 1.3rem; }
+  main { padding: 48px 24px; max-width: 720px; margin: 0 auto; }
+  .tag { color: #d99a3d; letter-spacing: 2px; font-size: 0.8rem; text-transform: uppercase; }
+  h2 { font-size: 2.4rem; margin: 12px 0 20px; }
+  p.lead { color: #cfc6b6; margin-bottom: 40px; line-height: 1.5; }
+  .materias { display: flex; flex-direction: column; gap: 16px; }
+  .materia-card {
+    display: block;
+    background: linear-gradient(90deg, #201b13, #2a2013);
+    border: 1px solid #3a3020;
+    border-radius: 14px;
+    padding: 24px;
+    text-decoration: none;
+    color: inherit;
+  }
+  .materia-card h3 { color: #d99a3d; font-size: 1.3rem; margin-bottom: 6px; }
+  .materia-card span { color: #cfc6b6; font-size: 0.95rem; }
+  .materia-card.proxima {
+    opacity: 0.55;
+    pointer-events: none;
+  }
+  footer { text-align: center; padding: 24px; color: #6b6252; font-size: 0.85rem; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">JR</div>
+  <h1>Aula Virtual — Jesús Rodríguez García</h1>
+</header>
+<main>
+  <div class="tag">ITES René Descartes</div>
+  <h2>Elige tu materia</h2>
+  <p class="lead">Compendio, actividades de evaluación formativa y seguimiento de tu avance, todo en un mismo lugar.</p>
+  <div class="materias">
+    <a class="materia-card" href="compendio.html?materia=bases-culinarias">
+      <h3>Bases Culinarias</h3>
+      <span>Licenciatura en Artes Culinarias y Negocios Gastronómicos</span>
+    </a>
+    <div class="materia-card proxima">
+      <h3>Expresión Oral y Escrita</h3>
+      <span>Próximamente</span>
+    </div>
+  </div>
+</main>
+<footer>Chef Jesús Rodríguez García</footer>
+</body>
+</html>
