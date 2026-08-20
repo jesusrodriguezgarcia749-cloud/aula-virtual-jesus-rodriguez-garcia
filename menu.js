@@ -16,7 +16,7 @@
   const estilos = document.createElement('style');
   estilos.textContent = `
     #jrgMenuBtn {
-      position: fixed; top: 66px; right: 16px; z-index: 998;
+      position: fixed; right: 16px; z-index: 998;
       width: 42px; height: 42px; border-radius: 50%;
       background: rgba(23,20,15,0.72); backdrop-filter: blur(3px);
       border: none; color: #f2ece1; font-size: 1.3rem;
@@ -64,6 +64,16 @@
   btn.setAttribute('aria-label', 'Abrir menú');
   btn.innerHTML = '☰';
   document.body.appendChild(btn);
+
+  // --- Posición dinámica según la altura real del encabezado de la página ---
+  function ubicarBoton() {
+    const header = document.querySelector('header');
+    const alturaHeader = header ? header.getBoundingClientRect().bottom : 60;
+    btn.style.top = Math.round(alturaHeader + 12) + 'px';
+  }
+  ubicarBoton();
+  window.addEventListener('resize', ubicarBoton);
+  window.addEventListener('load', ubicarBoton);
 
   const overlay = document.createElement('div');
   overlay.id = 'jrgMenuOverlay';

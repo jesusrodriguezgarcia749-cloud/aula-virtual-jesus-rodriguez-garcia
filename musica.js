@@ -8,6 +8,7 @@
   const VOLUMEN_INICIAL = 0.6;
 
   let sonando = false;
+  let temporizadorOcultar = null;
 
   const volumenGuardado = parseFloat(localStorage.getItem(CLAVE_VOLUMEN));
   const volumenActual = !isNaN(volumenGuardado) ? volumenGuardado : VOLUMEN_INICIAL;
@@ -20,11 +21,11 @@
   audio.preload = 'auto';
   document.body.appendChild(audio);
 
-  // --- Botón flotante + panel de volumen ---
+  // --- Estilos ---
   const estilos = document.createElement('style');
   estilos.textContent = `
     #jrgMusicaBtn {
-      position: fixed; top: 66px; right: 66px; z-index: 998;
+      position: fixed; right: 66px; z-index: 998;
       width: 42px; height: 42px; border-radius: 50%;
       background: rgba(23,20,15,0.72); backdrop-filter: blur(3px);
       border: none; color: #f2ece1; font-size: 1.15rem;
@@ -32,16 +33,16 @@
       cursor: pointer; font-family: Georgia, serif;
     }
     #jrgVolumenPanel {
-      position: fixed; top: 114px; right: 16px; z-index: 998;
-      background: rgba(23,20,15,0.9); backdrop-filter: blur(3px);
+      position: fixed; right: 16px; z-index: 998;
+      background: rgba(23,20,15,0.92); backdrop-filter: blur(3px);
       border-radius: 20px; padding: 10px 14px;
-      display: none; align-items: center; gap: 8px;
+      display: flex; align-items: center; gap: 8px;
       font-family: Georgia, serif; color: #f2ece1; font-size: 0.85rem;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.35s ease;
     }
-    #jrgVolumenPanel.visible { display: flex; }
-    #jrgVolumenSlider {
-      width: 110px; accent-color: #d99a3d;
-    }
+    #jrgVolumenPanel.visible { opacity: 1; pointer-events: auto; }
+    #jrgVolumenSlider { width: 110px; accent-color: #d99a3d; }
   `;
   document.head.appendChild(estilos);
 
@@ -60,8 +61,28 @@
   document.body.appendChild(panelVolumen);
   const slider = panelVolumen.querySelector('#jrgVolumenSlider');
 
+  // --- Posición dinámica según la altura real del encabezado de la página ---
+  function ubicarControles() {
+    const header = document.querySelector('header');
+    const alturaHeader = header ? header.getBoundingClientRect().bottom : 60;
+    const topBoton = Math.round(alturaHeader + 12);
+    btn.style.top = topBoton + 'px';
+    panelVolumen.style.top = (topBoton + 50) + 'px';
+  }
+  ubicarControles();
+  window.addEventListener('resize', ubicarControles);
+  window.addEventListener('load', ubicarControles);
+
   function actualizarIcono() {
     btn.innerHTML = sonando ? '🔈' : '🔇';
+  }
+
+  function mostrarPanelTemporalmente() {
+    panelVolumen.classList.add('visible');
+    if (temporizadorOcultar) clearTimeout(temporizadorOcultar);
+    temporizadorOcultar = setTimeout(() => {
+      panelVolumen.classList.remove('visible');
+    }, 3000);
   }
 
   function iniciarMusica() {
@@ -69,6 +90,7 @@
       sonando = true;
       actualizarIcono();
       localStorage.setItem(CLAVE_STORAGE, '1');
+      mostrarPanelTemporalmente();
     }).catch((err) => {
       console.warn('No se pudo reproducir la música todavía:', err);
     });
@@ -79,16 +101,32 @@
     sonando = false;
     actualizarIcono();
     localStorage.setItem(CLAVE_STORAGE, '0');
+    panelVolumen.classList.remove('visible');
+    if (temporizadorOcultar) clearTimeout(temporizadorOcultar);
   }
 
   btn.addEventListener('click', () => {
     if (sonando) {
       detenerMusica();
-      panelVolumen.classList.remove('visible');
     } else {
       iniciarMusica();
-      panelVolumen.classList.add('visible');
     }
+  });
+
+  // Mientras el usuario toca el control, no se oculta; al soltar, cuenta de nuevo los 3s
+  ['input', 'mousedown', 'touchstart'].forEach((evento) => {
+    slider.addEventListener(evento, () => {
+      panelVolumen.classList.add('visible');
+      if (temporizadorOcultar) clearTimeout(temporizadorOcultar);
+    });
+  });
+  ['change', 'mouseup', 'touchend'].forEach((evento) => {
+    slider.addEventListener(evento, () => {
+      if (temporizadorOcultar) clearTimeout(temporizadorOcultar);
+      temporizadorOcultar = setTimeout(() => {
+        panelVolumen.classList.remove('visible');
+      }, 3000);
+    });
   });
 
   slider.addEventListener('input', () => {
