@@ -6,8 +6,11 @@
   const CLAVE_STORAGE = 'jrg_musica_activa';
 
   let audioCtx = null;
-  let nodosActivos = [];
   let sonando = false;
+  let temporizadorNota = null;
+
+  // Escala pentatónica mayor, registro agudo-medio (agradable, sin disonancias)
+  const ESCALA = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50]; // C5 D5 E5 G5 A5 C6
 
   // --- Botón flotante ---
   const estilos = document.createElement('style');
@@ -37,78 +40,72 @@
     return audioCtx;
   }
 
-  // --- Pad ambiental: acorde suave con "respiración" lenta, en bucle indefinido ---
-  function iniciarMusica() {
+  // --- Una sola nota suave, tipo campanita, con ataque rápido y caída lenta ---
+  function reproducirNota() {
+    if (!sonando) return;
     const ctx = getAudioCtx();
-    if (ctx.state === 'suspended') ctx.resume();
+    const ahora = ctx.currentTime;
+
+    const frecuencia = ESCALA[Math.floor(Math.random() * ESCALA.length)];
+
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = frecuencia;
+
+    // Un segundo oscilador una octava arriba, muy suave, da brillo tipo "campanita"
+    const oscArmonico = ctx.createOscillator();
+    oscArmonico.type = 'sine';
+    oscArmonico.frequency.value = frecuencia * 2;
 
     const filtro = ctx.createBiquadFilter();
     filtro.type = 'lowpass';
-    filtro.frequency.value = 900;
+    filtro.frequency.value = 3500;
     filtro.connect(ctx.destination);
 
-    const gainMaestro = ctx.createGain();
-    gainMaestro.gain.setValueAtTime(0.0001, ctx.currentTime);
-    gainMaestro.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + 2.5);
-    gainMaestro.connect(filtro);
+    const gainNota = ctx.createGain();
+    gainNota.gain.setValueAtTime(0.0001, ahora);
+    gainNota.gain.exponentialRampToValueAtTime(0.16, ahora + 0.04); // ataque rápido
+    gainNota.gain.exponentialRampToValueAtTime(0.0001, ahora + 2.8); // caída lenta
 
-    // Acorde suave (Do mayor, octava baja) con ligero desafine para calidez
-    const frecuencias = [130.81, 164.81, 196.00, 261.63]; // C3, E3, G3, C4
+    const gainArmonico = ctx.createGain();
+    gainArmonico.gain.setValueAtTime(0.0001, ahora);
+    gainArmonico.gain.exponentialRampToValueAtTime(0.05, ahora + 0.04);
+    gainArmonico.gain.exponentialRampToValueAtTime(0.0001, ahora + 2.2);
 
-    frecuencias.forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      osc.type = 'sine';
-      osc.frequency.value = freq * (1 + (Math.random() - 0.5) * 0.004);
+    osc.connect(gainNota);
+    gainNota.connect(filtro);
+    oscArmonico.connect(gainArmonico);
+    gainArmonico.connect(filtro);
 
-      const gainOsc = ctx.createGain();
-      gainOsc.gain.value = 0.5;
+    osc.start(ahora);
+    osc.stop(ahora + 3);
+    oscArmonico.start(ahora);
+    oscArmonico.stop(ahora + 2.5);
+  }
 
-      // LFO lento para dar sensación de "respiración"
-      const lfo = ctx.createOscillator();
-      lfo.frequency.value = 0.05 + i * 0.01;
-      const lfoGain = ctx.createGain();
-      lfoGain.gain.value = 0.25;
-      lfo.connect(lfoGain);
-      lfoGain.connect(gainOsc.gain);
+  function programarSiguienteNota() {
+    if (!sonando) return;
+    // Entre 2 y 4.5 segundos, para que se sienta orgánico, no mecánico
+    const espera = 2000 + Math.random() * 2500;
+    temporizadorNota = setTimeout(() => {
+      reproducirNota();
+      programarSiguienteNota();
+    }, espera);
+  }
 
-      osc.connect(gainOsc);
-      gainOsc.connect(gainMaestro);
-
-      osc.start();
-      lfo.start();
-
-      nodosActivos.push(osc, lfo, gainOsc, lfoGain, gainMaestro, filtro);
-    });
-
+  function iniciarMusica() {
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
     sonando = true;
     actualizarIcono();
     localStorage.setItem(CLAVE_STORAGE, '1');
+    reproducirNota();
+    programarSiguienteNota();
   }
 
   function detenerMusica() {
-    const nodosAntiguos = nodosActivos;
-    const ctx = audioCtx;
-    if (ctx) {
-      nodosAntiguos.forEach((nodo) => {
-        if (nodo.gain) {
-          try {
-            nodo.gain.cancelScheduledValues(ctx.currentTime);
-            nodo.gain.setValueAtTime(nodo.gain.value, ctx.currentTime);
-            nodo.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
-          } catch (e) {}
-        }
-      });
-    }
-    setTimeout(() => {
-      nodosAntiguos.forEach((nodo) => {
-        try {
-          if (nodo.stop) nodo.stop();
-          nodo.disconnect();
-        } catch (e) {}
-      });
-    }, 700);
-    nodosActivos = [];
     sonando = false;
+    if (temporizadorNota) clearTimeout(temporizadorNota);
     actualizarIcono();
     localStorage.setItem(CLAVE_STORAGE, '0');
   }
