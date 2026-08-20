@@ -16,7 +16,7 @@
   const estilos = document.createElement('style');
   estilos.textContent = `
     #jrgMenuBtn {
-      position: fixed; top: 14px; right: 16px; z-index: 998;
+      position: fixed; top: 66px; right: 16px; z-index: 998;
       width: 42px; height: 42px; border-radius: 50%;
       background: rgba(23,20,15,0.72); backdrop-filter: blur(3px);
       border: none; color: #f2ece1; font-size: 1.3rem;

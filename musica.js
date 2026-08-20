@@ -13,7 +13,7 @@
   const estilos = document.createElement('style');
   estilos.textContent = `
     #jrgMusicaBtn {
-      position: fixed; top: 14px; right: 66px; z-index: 998;
+      position: fixed; top: 66px; right: 66px; z-index: 998;
       width: 42px; height: 42px; border-radius: 50%;
       background: rgba(23,20,15,0.72); backdrop-filter: blur(3px);
       border: none; color: #f2ece1; font-size: 1.15rem;
@@ -48,7 +48,8 @@
     filtro.connect(ctx.destination);
 
     const gainMaestro = ctx.createGain();
-    gainMaestro.gain.value = 0.05;
+    gainMaestro.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gainMaestro.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + 2.5);
     gainMaestro.connect(filtro);
 
     // Acorde suave (Do mayor, octava baja) con ligero desafine para calidez
@@ -85,12 +86,27 @@
   }
 
   function detenerMusica() {
-    nodosActivos.forEach((nodo) => {
-      try {
-        if (nodo.stop) nodo.stop();
-        nodo.disconnect();
-      } catch (e) {}
-    });
+    const nodosAntiguos = nodosActivos;
+    const ctx = audioCtx;
+    if (ctx) {
+      nodosAntiguos.forEach((nodo) => {
+        if (nodo.gain) {
+          try {
+            nodo.gain.cancelScheduledValues(ctx.currentTime);
+            nodo.gain.setValueAtTime(nodo.gain.value, ctx.currentTime);
+            nodo.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
+          } catch (e) {}
+        }
+      });
+    }
+    setTimeout(() => {
+      nodosAntiguos.forEach((nodo) => {
+        try {
+          if (nodo.stop) nodo.stop();
+          nodo.disconnect();
+        } catch (e) {}
+      });
+    }, 700);
     nodosActivos = [];
     sonando = false;
     actualizarIcono();
