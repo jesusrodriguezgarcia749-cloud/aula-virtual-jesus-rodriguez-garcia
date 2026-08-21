@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Actividad — Aula Virtual JRG</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, 'Times New Roman', serif; background: #17140f; color: #f2ece1; min-height: 100vh; overflow-x: hidden; position: relative; }
+  header { background: #f2ece1; color: #17140f; padding: 20px 24px; display: flex; align-items: center; gap: 12px; position: relative; z-index: 2; }
+  header a { color: #17140f; text-decoration: none; font-size: 1.4rem; margin-right: 8px; }
+  header h1 { font-size: 1.1rem; }
+  main { padding: 40px 24px; max-width: 620px; margin: 0 auto; position: relative; z-index: 2; }
+  .tag { color: #d99a3d; letter-spacing: 2px; font-size: 0.8rem; text-transform: uppercase; }
+  h2 { font-size: 1.4rem; margin: 10px 0 24px; line-height: 1.35; }
+  .opcion {
+    display: block; width: 100%; text-align: left; background: #201b13ee;
+    border: 2px solid #3a3020; border-radius: 12px; padding: 16px;
+    margin-bottom: 12px; color: #f2ece1; font-size: 1rem; font-family: inherit; cursor: pointer;
+  }
+  .opcion.correcta { border-color: #6a9955; background: #24301fee; }
+  .opcion.incorrecta { border-color: #b04a3a; background: #2e1e1aee; }
+  .vf-fila { display: flex; gap: 12px; }
+  .vf-fila .opcion { flex: 1; text-align: center; font-weight: bold; }
+  input[type="text"] {
+    width: 100%; padding: 14px 16px; border-radius: 10px;
+    border: 2px solid #3a3020; font-family: inherit; font-size: 1rem;
+    background: #201b13ee; color: #f2ece1; margin-bottom: 12px;
+  }
+  input[type="text"].correcta { border-color: #6a9955; }
+  input[type="text"].incorrecta { border-color: #b04a3a; }
+  #btnResponderTexto {
+    width: 100%; background: #d99a3d; color: #17140f; border: none;
+    padding: 12px 20px; border-radius: 30px; font-weight: bold; font-size: 1rem; cursor: pointer; margin-bottom: 12px;
+  }
+  .retro {
+    margin-top: 4px; padding: 16px; border-radius: 10px;
+    background: #201b13ee; color: #cfc6b6; font-size: 0.95rem; line-height: 1.5;
+  }
+  .retro.ok { border-left: 4px solid #6a9955; }
+  .retro.mal { border-left: 4px solid #b04a3a; }
+  .retro .frase { display: block; color: #d99a3d; font-weight: bold; margin-bottom: 6px; font-size: 1rem; }
+  #siguiente {
+    display: none; margin-top: 20px; width: 100%; background: #d99a3d; color: #17140f;
+    border: none; padding: 14px 20px; border-radius: 30px; font-weight: bold; font-size: 1rem; cursor: pointer;
+  }
+  .progreso { color: #a89f8d; font-size: 0.85rem; margin-bottom: 4px; }
+  .racha { color: #d99a3d; font-size: 0.85rem; margin-bottom: 16px; font-weight: bold; }
+  #final { display: none; text-align: center; position: relative; z-index: 2; }
+  #final h2 { color: #d99a3d; }
+  #reintentar {
+    margin-top: 20px; width: 100%; background: none; border: 1px solid #6b6252;
+    color: #cfc6b6; padding: 14px 20px; border-radius: 30px; font-size: 1rem; cursor: pointer;
+  }
+
+  #fondoAmbiental { position: fixed; inset: 0; overflow: hidden; z-index: 0; pointer-events: none; }
+  .flotante {
+    position: absolute; font-size: 3.2rem; opacity: 0.16;
+    animation: flotar 13s ease-in-out infinite;
+    filter: drop-shadow(0 0 6px rgba(0,0,0,0.4));
+  }
+  @keyframes flotar {
+    0%   { transform: translate(0, 0) rotate(0deg); }
+    25%  { transform: translate(14px, -22px) rotate(10deg); }
+    50%  { transform: translate(-10px, 14px) rotate(-8deg); }
+    75%  { transform: translate(18px, 8px) rotate(6deg); }
+    100% { transform: translate(0, 0) rotate(0deg); }
+  }
+
+  .particula {
+    position: fixed; top: 50%; left: 50%; font-size: 2.6rem;
+    z-index: 999; pointer-events: none; will-change: transform, opacity;
+    transition: transform 0.45s cubic-bezier(.2,.8,.3,1), opacity 1.3s ease-in;
+  }
+
+  #ascenso {
+    display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+    background: #d99a3d; color: #17140f; padding: 14px 24px; border-radius: 30px;
+    font-weight: bold; font-size: 0.95rem; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    text-align: center; white-space: nowrap;
+  }
+  @keyframes aparecer { from { opacity: 0; top: 0; } to { opacity: 1; top: 20px; } }
+  @keyframes desaparecer { from { opacity: 1; } to { opacity: 0; top: 0; } }
+</style>
+</head>
+<body>
+<div id="fondoAmbiental"></div>
+<div id="ascenso"></div>
+
+<header>
+  <a href="actividades.html">←</a>
+  <h1 id="tituloSubtema">Actividad</h1>
+</header>
+
+<main>
+  <div id="juego">
+    <div class="progreso" id="progreso"></div>
+    <div class="racha" id="racha"></div>
+    <div class="tag" id="tipoPregunta">Pregunta</div>
+    <h2 id="preguntaTexto"></h2>
+    <div id="opciones"></div>
+    <div class="retro" id="retro" style="display:none;"></div>
+    <button id="siguiente">Siguiente</button>
+  </div>
+
+  <div id="final">
+    <h2 id="resultadoTitulo"></h2>
+    <p id="resultadoTexto" style="color:#cfc6b6; margin-top:10px;"></p>
+    <button id="reintentar">Volver a contestar</button>
+  </div>
+</main>
+
+<script type="module">
+import { app, db } from './firebase-config.js';
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const auth = getAuth(app);
+signInAnonymously(auth);
+
+const params = new URLSearchParams(window.location.search);
+const materia = params.get('materia') || 'bases-culinarias';
+const subtema = params.get('subtema') || '1.1';
+
+const BANCO = {
+  '1.1': {
+    titulo: 'Géneros y elaboraciones culinarias sencillas',
+    preguntas: [
+      { tipo: 'multiple', texto: '¿A qué figura histórica se atribuye la sistematización y codificación de la cocina a finales del siglo XIX?', opciones: ['Georges Auguste Escoffier', 'Julia Child', 'Ferran Adrià', 'Paul Bocuse'], correcta: 0, explicacion: 'Escoffier sistematizó la cocina francesa clásica y la organización de la brigada de cocina.' },
+      { tipo: 'multiple', texto: '¿Qué criterio define a un "género culinario" en la cocina profesional?', opciones: ['El origen geográfico del platillo', 'La técnica, estructura o función que cumple dentro del menú', 'El precio de venta del platillo', 'El ingrediente principal usado'], correcta: 1, explicacion: 'El género se define por función y técnica, nunca por nacionalidad o ingrediente principal.' },
+      { tipo: 'vf', texto: 'Clasificar una preparación por su ingrediente principal (ej. "todo lo de pollo") es la forma correcta de identificar su género culinario.', correcta: false, explicacion: 'Es un error común. El género se define por técnica y función, no por el ingrediente principal.' },
+      { tipo: 'multiple', texto: '¿Qué distingue a una elaboración culinaria sencilla de una compuesta?', opciones: ['La sencilla no depende de otra preparación previa para existir', 'La sencilla siempre lleva más ingredientes', 'La compuesta es siempre más barata', 'No hay ninguna diferencia real'], correcta: 0, explicacion: 'La compuesta se construye a partir de elementos sencillos, como una salsa derivada de una salsa madre.' },
+      { tipo: 'multiple', texto: '¿Qué función cumplen los "Entremeses" dentro de un menú?', opciones: ['Cierran la comida con un sabor dulce', 'Son preparaciones en porciones pequeñas que abren el apetito al inicio', 'Sustituyen al plato fuerte', 'Se sirven únicamente en banquetes'], correcta: 1, explicacion: 'Son preparaciones frías o calientes en porciones pequeñas que abren el apetito al inicio.' },
+      { tipo: 'vf', texto: 'Carnes, aves, caza y pescados conforman un solo género culinario porque todos cumplen la misma función dentro del menú: ser el plato fuerte.', correcta: true, explicacion: 'Correcto, se agrupan por función, no por tipo de proteína.' },
+      { tipo: 'multiple', texto: '¿Cuáles son las llamadas "salsas madre" de la cocina clásica?', opciones: ['Cátsup, mayonesa, mostaza, soya y BBQ', 'Béchamel, velouté, española, holandesa y tomate', 'Verde, roja, blanca, negra y amarilla', 'Pesto, alfredo, boloñesa, carbonara y marinara'], correcta: 1, explicacion: 'Son las cinco salsas base de la cocina clásica de las que derivan muchas otras.' },
+      { tipo: 'completar', texto: 'El Sorbet ocupaba la etapa número ___ del orden del menú clásico de 13 tiempos, y su propósito era limpiar el paladar antes del plato fuerte.', respuesta: '7', explicacion: 'El Sorbet se servía justo antes del plato fuerte principal.' },
+      { tipo: 'multiple', texto: 'En la cocina mexicana contemporánea, ¿a qué género culinario pertenece un caldo de res?', opciones: ['Plato fuerte', 'Al género de sopas y potajes, como "sopa clara"', 'Guarnición', 'Entremés'], correcta: 1, explicacion: 'Se clasifica como sopa clara, junto con consomés y caldos.' },
+      { tipo: 'multiple', texto: '¿Qué diferencia operativa existía entre el antiguo service à la française y el service à la russe?', opciones: ['En el francés se servía por etapas; en el ruso todo junto', 'En el francés todos los platillos se servían simultáneamente; en el ruso por etapas', 'No existía ninguna diferencia real', 'El service à la russe no incluía postres'], correcta: 1, explicacion: 'El service à la russe estableció la secuencia estándar por etapas que seguimos usando hoy.' },
+      { tipo: 'multiple', texto: '¿Cuáles son las dos subdivisiones clásicas dentro del género "Sopas y potajes"?', opciones: ['Frías y calientes', 'Claras (consomés, caldos) y ligadas o espesas (cremas, veloutés)', 'Dulces y saladas', 'De verdura y de carne'], correcta: 1, explicacion: 'Se dividen en claras y ligadas/espesas.' },
+      { tipo: 'multiple', texto: '¿Cuál de las siguientes NO es una técnica de cocción clásica del género "Huevos"?', opciones: ['Poché', 'Mollet', 'Napar', 'En cocotte'], correcta: 2, explicacion: '"Napar" es cubrir con salsa, no una técnica de cocción de huevo.' },
+      { tipo: 'multiple', texto: '¿Qué tipo de preparaciones engloba el género de los "Farináceos"?', opciones: ['Pastas, arroces y otros granos', 'Solo postres de harina', 'Únicamente panes', 'Salsas espesadas con harina'], correcta: 0, explicacion: 'Son pastas, arroces y granos preparados como plato principal o guarnición.' },
+      { tipo: 'multiple', texto: '¿Quién creó la brigada de cocina clásica y con qué propósito principal?', opciones: ['Auguste Escoffier, para organizar cocinas de hotel de gran volumen', 'Julia Child, para enseñar cocina en televisión', 'Un grupo de chefs mexicanos', 'No tiene un creador conocido'], correcta: 0, explicacion: 'Escoffier organizó el trabajo mediante roles y responsabilidades claras.' },
+      { tipo: 'multiple', texto: '¿Qué distingue la función del Chef Ejecutivo de la del Sous Chef dentro de la brigada?', opciones: ['Son exactamente el mismo puesto con nombre distinto', 'El Chef Ejecutivo dirige menú, costos y personal; el Sous Chef supervisa la operación diaria y lo sustituye en su ausencia', 'El Sous Chef solo lava trastes', 'El Chef Ejecutivo nunca entra a la cocina'], correcta: 1, explicacion: 'El Chef Ejecutivo dirige el estándar de calidad final; el Sous Chef es el segundo al mando.' }
+    ]
+  },
+  '1.2': {
+    titulo: 'Elaboración culinaria básica',
+    preguntas: [
+      { tipo: 'multiple', texto: '¿Cómo se le llama al sistema que dividió el trabajo en secciones especializadas a cargo de un chef de partie?', opciones: ['Brigada de cocina (brigade de cuisine)', 'Equipo de servicio', 'Comité gastronómico', 'Junta de cocineros'], correcta: 0, explicacion: 'La brigada de cocina organiza el trabajo en secciones especializadas.' },
+      { tipo: 'multiple', texto: '¿Cuáles son las cuatro etapas inalterables de la secuencia de una elaboración culinaria básica?', opciones: ['Comprar, lavar, cocinar, servir', 'Selección y mise en place; técnica de cocción; rectificación de sabor; presentación', 'Picar, freír, hornear, enfriar', 'Pesar, mezclar, hornear, decorar'], correcta: 1, explicacion: 'Toda elaboración sigue: mise en place → técnica → rectificación → presentación.' },
+      { tipo: 'completar', texto: '"Mise en place" significa literalmente "puesto en su ___".', respuesta: 'lugar', explicacion: 'Mise en place se traduce como "puesto en su lugar".' },
+      { tipo: 'vf', texto: 'La razón principal para exigir un mise en place estricto es reducir la carga mental y de toma de decisiones durante la cocción activa.', correcta: true, explicacion: 'Minimiza el margen de error al no improvisar mientras se cocina.' },
+      { tipo: 'multiple', texto: '¿Cómo se aplica el mise en place en el contexto de banquetes y eventos?', opciones: ['No se aplica, todo se improvisa', 'Es casi total: la mayor parte se completa antes del evento, dejando solo el montaje final', 'Solo se aplica a los postres', 'Es idéntico al de un restaurante a la carta'], correcta: 1, explicacion: 'En banquetes no se puede improvisar con cientos de comensales.' },
+      { tipo: 'vf', texto: 'Comenzar a cocinar sin haber leído la receta completa es un error recurrente en cocineros en formación.', correcta: true, explicacion: 'Es uno de los errores más comunes, junto con cortar ingredientes de tamaños desiguales.' },
+      { tipo: 'multiple', texto: '¿Cómo difiere la aplicación del mise en place entre un restaurante a la carta y un servicio de banquetes?', opciones: ['En la carta es parcial (se ensambla al momento); en banquetes es casi total', 'Son exactamente iguales', 'En banquetes no existe mise en place', 'En la carta es total; en banquetes es parcial'], correcta: 0, explicacion: 'A la carta se ensambla al momento; en banquetes casi todo está listo de antemano.' },
+      { tipo: 'multiple', texto: '¿Cuándo debe un cocinero lavarse las manos durante su turno, además de al iniciarlo?', opciones: ['Solo al final del turno', 'Después de tocar alimentos crudos distintos, ir al baño, y cada vez que cambia de tarea', 'Una vez cada 2 horas exactamente', 'No es necesario si usa guantes'], correcta: 1, explicacion: 'El lavado de manos se repite en cada momento crítico.' },
+      { tipo: 'vf', texto: 'Usar tablas de picar de distintos colores o funciones ayuda a evitar la contaminación cruzada entre alimentos crudos y listos para consumo.', correcta: true, explicacion: 'Separar por color evita mezclar bacterias de crudos con alimentos ya preparados.' },
+      { tipo: 'multiple', texto: '¿Qué se debe hacer con una cuchara de degustación antes de volver a probar la misma preparación?', opciones: ['Reutilizarla tal cual, no pasa nada', 'Lavarla o cambiarla antes de volver a usarla', 'Solo limpiarla con la mano', 'Usarla para varias preparaciones distintas sin lavar'], correcta: 1, explicacion: 'Nunca se reutiliza sin lavar, para no contaminar la preparación.' },
+      { tipo: 'multiple', texto: '¿Cuál es la razón práctica y cognitiva más importante para tener un buen mise en place?', opciones: ['Se ve más ordenado para las fotos', 'Reduce la carga mental durante la cocción activa, minimizando errores', 'Es un requisito solo estético', 'Ahorra dinero en ingredientes'], correcta: 1, explicacion: 'El beneficio real es cognitivo: menos decisiones que tomar con el fuego encendido.' }
+    ]
+  },
+  '1.3': {
+    titulo: 'Equipos e instrumentos de medida',
+    preguntas: [
+      { tipo: 'multiple', texto: '¿Por qué la cocina profesional prioriza medir los ingredientes sólidos por peso en lugar de por volumen?', opciones: ['Porque es más rápido', 'Porque el volumen de ingredientes de densidad variable (como la harina) cambia hasta un 20% según su compactación', 'Porque el peso siempre es más barato', 'No hay ninguna razón técnica real'], correcta: 1, explicacion: 'El volumen varía mucho por compactación; el peso es una medida absoluta y confiable.' },
+      { tipo: 'multiple', texto: '¿Cuál es el instrumento adecuado para medir la concentración de azúcares en grados Brix?', opciones: ['El termómetro de sonda', 'El refractómetro', 'La báscula digital', 'El pH-metro'], correcta: 1, explicacion: 'El refractómetro mide la concentración de azúcares disueltos.' },
+      { tipo: 'multiple', texto: '¿Qué instrumento se utiliza para verificar la temperatura de planchas y freidoras sin contacto físico?', opciones: ['Termómetro de mercurio', 'Termómetro láser o infrarrojo', 'Termómetro de sonda', 'Termómetro de horno'], correcta: 1, explicacion: 'El termómetro láser permite medir a distancia superficies calientes.' },
+      { tipo: 'multiple', texto: '¿Cómo se verifica la calibración básica de un termómetro de sonda en cocina?', opciones: ['Sumergiéndolo en agua con hielo (debe marcar 0°C) y en agua hirviendo (debe marcar 100°C)', 'Comparándolo con otro termómetro cualquiera', 'No se puede calibrar en cocina', 'Solo el fabricante puede calibrarlo'], correcta: 0, explicacion: 'Estos dos puntos de referencia (0°C y 100°C) confirman su precisión.' },
+      { tipo: 'completar', texto: 'Las siglas AP (As Purchased) se refieren al peso del producto tal como se ___.', respuesta: 'compra', explicacion: 'AP es el peso del producto entero, tal como se compra.' },
+      { tipo: 'multiple', texto: '¿Qué significan las siglas EP (Edible Portion)?', opciones: ['El peso total del empaque', 'El peso de la porción comestible después de limpiar, pelar o deshuesar', 'El precio de venta del producto', 'El peso estimado por el proveedor'], correcta: 1, explicacion: 'EP es el peso neto, aprovechable, después de la limpieza.' },
+      { tipo: 'multiple', texto: '¿Cuáles son tres elementos mínimos que debe contener una Ficha Técnica de Producción?', opciones: ['Nombre del chef, fecha y firma', 'Lista de ingredientes con cantidad exacta, procedimiento paso a paso y rendimiento', 'Solo el nombre del platillo', 'Precio de venta y costo unitario'], correcta: 1, explicacion: 'Estos tres elementos son la base de cualquier receta estándar documentada.' },
+      { tipo: 'vf', texto: 'En una receta estándar, el "Rendimiento" es el número total de porciones que produce con las cantidades indicadas.', correcta: true, explicacion: 'Correcto, el rendimiento indica cuántas porciones salen de esa receta.' },
+      { tipo: 'multiple', texto: '¿Qué es la "Merma" en la administración de materia prima?', opciones: ['El costo total del ingrediente', 'El porcentaje de un ingrediente que se pierde durante su preparación', 'El precio de compra al mayoreo', 'La fecha de caducidad del producto'], correcta: 1, explicacion: 'La merma es lo que se pierde al pelar, deshuesar o recortar.' },
+      { tipo: 'multiple', texto: '¿Para qué ingredientes resulta indispensable usar una báscula de precisión en lugar de una báscula de cocina normal?', opciones: ['Para pesar sacos grandes de harina', 'Para medir masas muy pequeñas: especias, levaduras, aditivos y gelificantes', 'Para pesar personas', 'No hay diferencia entre ambas básculas'], correcta: 1, explicacion: 'La precisión importa mucho en cantidades pequeñas, donde un gramo de más cambia el resultado.' },
+      { tipo: 'multiple', texto: '¿Qué función técnica cumple el tamiz o colador fino en la estandarización?', opciones: ['Solo sirve para lavar verduras', 'Estandariza la textura y granulometría, por ejemplo al cernir harinas o colar salsas', 'Mide la temperatura de los líquidos', 'Sustituye a la báscula'], correcta: 1, explicacion: 'El tamiz da uniformidad a harinas cernidas y salsas coladas.' },
+      { tipo: 'completar', texto: 'Las siglas PHF/APP identifican a los Alimentos Potencialmente ___, que requieren control estricto de tiempo y temperatura.', respuesta: 'Peligrosos', explicacion: 'PHF/APP = Alimentos Potencialmente Peligrosos.' },
+      { tipo: 'multiple', texto: '¿Por qué importa que los cortes de verdura sean parejos en tamaño, desde el punto de vista de la medición?', opciones: ['Solo por estética', 'Porque piezas de tamaño distinto se cocinan a velocidades distintas, produciendo un resultado disparejo', 'No tiene ninguna importancia técnica', 'Porque así se ve más profesional en fotos'], correcta: 1, explicacion: 'El corte estandarizado asegura que todas las piezas terminen de cocinarse al mismo tiempo.' },
+      { tipo: 'multiple', texto: '¿Qué corte estandarizado produce cubos de 2 a 3 mm por lado, usado en guarniciones finas?', opciones: ['Juliana', 'Brunoise', 'Paisana', 'Batonnet'], correcta: 1, explicacion: 'El Brunoise es el corte en cubos más pequeño y fino.' },
+      { tipo: 'multiple', texto: '¿Qué corte estandarizado se usa específicamente para hojas (como lechuga o albahaca), enrollándolas antes de cortarlas en tiras finas?', opciones: ['Chiffonade', 'Concassé', 'Mirepoix', 'Rondelle'], correcta: 0, explicacion: 'El Chiffonade se aplica enrollando las hojas para cortarlas en tiras finas.' }
+    ]
+  },
+  '1.4': {
+    titulo: 'Tablas de temperaturas y manuales de equipos',
+    preguntas: [
+      { tipo: 'multiple', texto: '¿Cuál es el rango exacto de la "zona de peligro" de temperatura bacteriana?', opciones: ['Entre 6°C y 65°C', 'Entre 20°C y 40°C', 'Entre 0°C y 10°C', 'Entre 80°C y 100°C'], correcta: 0, explicacion: 'En esta zona la multiplicación bacteriana es más rápida.' },
+      { tipo: 'multiple', texto: '¿Cuál es el tiempo máximo acumulado que un alimento perecedero puede permanecer en la zona de peligro?', opciones: ['30 minutos', 'No más de dos horas acumuladas', '6 horas', 'No hay límite si está tapado'], correcta: 1, explicacion: 'Pasadas las 2 horas acumuladas, el riesgo de contaminación se vuelve inaceptable.' },
+      { tipo: 'completar', texto: 'La temperatura interna mínima segura para cocinar aves y aves molidas es de ___ grados.', respuesta: '74', explicacion: 'Las aves requieren 74°C de temperatura interna mínima.' },
+      { tipo: 'multiple', texto: '¿Qué temperatura interna mínima debe alcanzar la carne molida de res, cerdo o cordero?', opciones: ['60°C', '65°C', '71°C', '80°C'], correcta: 2, explicacion: 'La carne molida requiere 71°C debido a la mayor superficie expuesta a contaminación.' },
+      { tipo: 'vf', texto: 'La temperatura de conservación estándar para la refrigeración de alimentos perecederos es de 0°C a 4°C.', correcta: true, explicacion: 'Correcto, ese es el rango seguro de refrigeración.' },
+      { tipo: 'multiple', texto: 'En el mantenimiento en caliente (buffet), ¿qué temperatura mínima se debe mantener?', opciones: ['50°C', '60°C', '65°C o mayor', '80°C obligatorio'], correcta: 2, explicacion: 'Mantener 65°C o más evita que el alimento entre a la zona de peligro.' },
+      { tipo: 'multiple', texto: 'En la cocción del azúcar, ¿qué punto de textura se alcanza entre los 112°C y 116°C?', opciones: ['Hilo', 'Bola blanda, base de fondant y algunos merengues', 'Quebradizo', 'Caramelo oscuro'], correcta: 1, explicacion: 'El punto de bola blanda ocurre en ese rango.' },
+      { tipo: 'multiple', texto: '¿Qué temperatura se requiere para alcanzar el punto de caramelo "Quebradizo"?', opciones: ['Entre 100°C y 110°C', 'Entre 150°C y 160°C', 'Entre 200°C y 220°C', 'Entre 80°C y 90°C'], correcta: 1, explicacion: 'El punto quebradizo endurece completamente el azúcar.' },
+      { tipo: 'multiple', texto: '¿En qué consiste la Reacción de Maillard?', opciones: ['La descomposición directa de azúcares sin proteínas', 'La reacción entre aminoácidos y azúcares reductores (140-165°C) responsable del dorado y sabor tostado', 'Un proceso de fermentación', 'La congelación rápida de un alimento'], correcta: 1, explicacion: 'Ocurre entre aminoácidos y azúcares, dando color y sabor tostado.' },
+      { tipo: 'vf', texto: 'Una carne húmeda no se sella correctamente porque el exceso de humedad enfría la sartén e impide alcanzar la temperatura de la reacción de Maillard.', correcta: true, explicacion: 'Correcto, la humedad en la superficie retrasa el sellado.' },
+      { tipo: 'multiple', texto: '¿A qué temperatura ocurre la gelatinización del almidón y qué efecto produce?', opciones: ['Entre 60-70°C; los gránulos absorben agua y se hinchan, espesando el líquido', 'A 100°C; el almidón se quema', 'A 0°C; el almidón se congela', 'No depende de la temperatura'], correcta: 0, explicacion: 'La gelatinización espesa salsas y cremas en ese rango de temperatura.' },
+      { tipo: 'completar', texto: 'En condiciones óptimas dentro de la zona de peligro, los microorganismos pueden duplicar su población cada ___ minutos.', respuesta: '20', explicacion: 'Es un ritmo de multiplicación muy rápido, por eso se limita el tiempo en esa zona.' },
+      { tipo: 'multiple', texto: '¿Cuál es el rango de temperatura y el límite de tiempo exigido para el enfriamiento rápido de un alimento tras su cocción?', opciones: ['De 65°C a 21°C en máximo 2 horas', 'De 100°C a 50°C en 10 minutos', 'De 65°C a 0°C en 30 minutos', 'No hay un límite establecido'], correcta: 0, explicacion: 'El enfriamiento rápido debe completarse en ese rango y tiempo para evitar riesgo.' },
+      { tipo: 'multiple', texto: 'En el manejo del azúcar, ¿qué textura produce el punto "Hilo" y a qué temperatura ocurre?', opciones: ['Forma un hilo fino entre los dedos, entre 110-112°C, usado en almíbares ligeros', 'Se endurece por completo, a 160°C', 'Es líquido y transparente, a 90°C', 'No existe ese punto en pastelería'], correcta: 0, explicacion: 'El punto hilo es de los primeros puntos de cocción del azúcar.' },
+      { tipo: 'multiple', texto: '¿Cuál es la diferencia química fundamental entre la Caramelización y la Reacción de Maillard?', opciones: ['Son exactamente lo mismo', 'La caramelización descompone azúcares sin proteínas; Maillard requiere aminoácidos y azúcares juntos', 'La caramelización solo ocurre en frío', 'Maillard solo ocurre con azúcar pura'], correcta: 1, explicacion: 'La diferencia clave es la presencia o ausencia de proteínas en la reacción.' }
+    ]
+  },
+  '1.5': {
+    titulo: 'Unidades y pesos establecidos para la elaboración de alimentos y bebidas',
+    preguntas: [
+      { tipo: 'completar', texto: 'Una onza (oz) equivale aproximadamente a ___ gramos.', respuesta: '28', explicacion: 'Es la equivalencia más usada en conversiones culinarias.' },
+      { tipo: 'multiple', texto: '¿A cuántos gramos equivale una libra (lb)?', opciones: ['100 gramos', '250 gramos', '454 gramos', '1000 gramos'], correcta: 2, explicacion: 'Una libra equivale a 454 gramos.' },
+      { tipo: 'multiple', texto: '¿A cuántos mililitros equivale una onza líquida (fl oz)?', opciones: ['10 ml', '30 ml', '50 ml', '100 ml'], correcta: 1, explicacion: 'Una onza líquida equivale a 30 ml aproximadamente.' },
+      { tipo: 'multiple', texto: '¿Cuál es la fórmula del Factor de Conversión (FC) para ajustar el rendimiento de una receta?', opciones: ['FC = porciones deseadas − porciones de la receta', 'FC = (porciones deseadas × peso porción deseada) ÷ (porciones receta × peso porción estándar)', 'FC = peso total del platillo ÷ 2', 'FC = número de comensales × precio'], correcta: 1, explicacion: 'Esta fórmula permite escalar cualquier receta con precisión.' },
+      { tipo: 'vf', texto: 'Las unidades "al gusto" son inaceptables en pastelería y panadería porque estas disciplinas requieren precisión absoluta.', correcta: true, explicacion: 'Una variación mínima en pastelería altera el resultado final.' },
+      { tipo: 'multiple', texto: '¿Cuál es la equivalencia en litros de un galón (gal) y de un cuarto de galón (qt)?', opciones: ['1 gal = 3.8 l y 1 qt = 0.95 l', '1 gal = 1 l y 1 qt = 0.5 l', '1 gal = 10 l y 1 qt = 5 l', '1 gal = 2 l y 1 qt = 1 l'], correcta: 0, explicacion: 'Estas son las equivalencias estándar del sistema imperial al métrico.' },
+      { tipo: 'completar', texto: 'La fórmula para convertir grados Fahrenheit a Celsius es (°F − 32) ÷ ___.', respuesta: '1.8', explicacion: 'Esa es la fórmula exacta de conversión.' },
+      { tipo: 'multiple', texto: '¿Cuál de las siguientes es una salsa madre y su derivada correspondiente?', opciones: ['Béchamel (leche + roux blanco) → Mornay (con queso)', 'Cátsup → BBQ', 'Mayonesa → Ranch', 'Soya → Teriyaki'], correcta: 0, explicacion: 'La Béchamel con queso agregado se convierte en salsa Mornay.' },
+      { tipo: 'vf', texto: 'Un roux es siempre una proporción fija de grasa y harina, lo cual es un ejemplo de estandarización de unidades aplicada a una elaboración clásica.', correcta: true, explicacion: 'El roux ejemplifica cómo la estandarización de proporciones da consistencia a una preparación.' }
+    ]
+  },
+  '2.1': {
+    titulo: 'Aprovisionamiento de materias primas',
+    preguntas: [
+      { tipo: 'multiple', texto: '¿Qué regla fundamental de la cocina profesional establece el límite de la técnica frente al insumo?', opciones: ['La técnica siempre puede compensar un ingrediente de mala calidad', 'La calidad del insumo pone un techo real que ninguna técnica puede superar', 'El precio determina la calidad', 'No existe relación entre técnica e insumo'], correcta: 1, explicacion: 'Un ingrediente de mala calidad limita el resultado final sin importar la habilidad técnica.' },
+      { tipo: 'vf', texto: 'Diseñar el menú alrededor de la temporada, en lugar de exigir ingredientes fuera de ella, mejora el resultado final sin alterar la técnica.', correcta: true, explicacion: 'Aprovechar el punto óptimo de frescura, abundancia y precio local mejora todo el proceso.' },
+      { tipo: 'multiple', texto: '¿Qué actitud diferencia a un cocinero comprometido con la calidad al momento de adquirir materia prima?', opciones: ['Aceptar pasivamente lo que el proveedor entregue', 'Acudir personalmente a elegir la materia prima y buscar otro proveedor si no cumple', 'Comprar siempre al proveedor más barato', 'Delegar toda la decisión al gerente'], correcta: 1, explicacion: 'La actitud activa implica verificar personalmente la calidad, no solo recibir lo que llegue.' },
+      { tipo: 'multiple', texto: '¿Por qué la cadena de frío ininterrumpida es determinante para la calidad de un ingrediente perecedero?', opciones: ['No tiene impacto real en la calidad', 'Mantener el producto en su rango seguro de temperatura evita acelerar su deterioro de forma irreversible', 'Solo afecta el sabor, no la seguridad', 'Es solo un requisito legal sin fundamento técnico'], correcta: 1, explicacion: 'Una interrupción en la cadena de frío puede dañar el producto de forma permanente.' },
+      { tipo: 'multiple', texto: '¿Cuáles son las cinco etapas del ciclo de compras en una cocina profesional?', opciones: ['Comprar, cocinar, servir, cobrar, limpiar', 'Especificación, cotización y selección, orden de compra, recepción, almacenamiento', 'Pedir, pagar, recibir', 'Buscar, negociar, firmar'], correcta: 1, explicacion: 'Estas cinco etapas forman el ciclo completo de aprovisionamiento.' },
+      { tipo: 'multiple', texto: '¿Bajo qué dimensiones clave se evalúa y selecciona a un proveedor de alimentos?', opciones: ['Solo el precio más bajo', 'Calidad consistente, cumplimiento de tiempos de entrega, condiciones sanitarias y trazabilidad documentada', 'Únicamente la cercanía geográfica', 'Solo la cantidad de productos que ofrece'], correcta: 1, explicacion: 'Estas cuatro dimensiones garantizan una relación de proveeduría confiable.' },
+      { tipo: 'multiple', texto: '¿Cuál es la diferencia operativa entre el sistema FIFO y el sistema FEFO en el almacenamiento?', opciones: ['Son exactamente el mismo sistema', 'FIFO organiza por orden de llegada; FEFO prioriza la fecha de caducidad real del producto', 'FIFO es solo para líquidos y FEFO solo para sólidos', 'FEFO ignora las fechas de caducidad'], correcta: 1, explicacion: 'FEFO es más preciso cuando la fecha de caducidad no coincide con el orden de llegada.' },
+      { tipo: 'vf', texto: 'La trazabilidad permite reconstruir el recorrido completo de un ingrediente desde su origen hasta el plato, lo cual es clave ante una alerta sanitaria.', correcta: true, explicacion: 'Correcto, permite retirar con precisión solo el producto afectado.' },
+      { tipo: 'multiple', texto: '¿Qué parámetros mínimos se deben verificar al recibir carnes y aves en la cocina?', opciones: ['Solo el precio en la factura', 'Temperatura ≤4°C o congelado, color, ausencia de olores extraños, empaque íntegro y fecha de caducidad', 'Únicamente el peso total', 'Solo la marca del proveedor'], correcta: 1, explicacion: 'Estos parámetros confirman que la recepción cumple los estándares de calidad.' },
+      { tipo: 'multiple', texto: '¿Por qué los cefalópodos como el pulpo requieren un tratamiento físico previo (golpeado o congelación) antes de cocinarse?', opciones: ['Solo por tradición sin fundamento técnico', 'Porque sus fibras musculares son densas y elásticas; romper la estructura ayuda a desnaturalizar el colágeno y ablandarlo', 'Para que cambien de color', 'No es necesario ningún tratamiento previo'], correcta: 1, explicacion: 'El golpeado o congelado previo acelera el ablandamiento del pulpo al cocer.' },
+      { tipo: 'completar', texto: 'La fórmula para calcular la cantidad bruta (AP) a partir de la cantidad neta (EP) y el porcentaje de merma es: AP = EP ÷ (1 − % de ___).', respuesta: 'merma', explicacion: 'Se divide la cantidad neta entre 1 menos el porcentaje de merma expresado en decimal.' },
+      { tipo: 'multiple', texto: '¿Qué protocolo correcto se debe seguir al recibir un pedido con hallazgos parciales de descomposición?', opciones: ['Rechazar todo el pedido automáticamente', 'Documentar con fotografía, separar físicamente las unidades defectuosas, rechazar solo esas y aceptar el resto si cumple', 'Aceptar todo sin revisar', 'Ignorar el problema si el proveedor es de confianza'], correcta: 1, explicacion: 'Este protocolo permite rechazar con precisión solo lo defectuoso.' }
+    ]
+  },
+  '2.2': {
+    titulo: 'Materias primas de uso común',
+    preguntas: [
+      { tipo: 'multiple', texto: '¿Cuáles son los tres grandes orígenes en los que se divide cualquier materia prima?', opciones: ['Caro, medio, barato', 'Animal, vegetal y mineral', 'Fresco, congelado, seco', 'Nacional e importado'], correcta: 1, explicacion: 'Cada origen impone reglas distintas de manejo, conservación y riesgo sanitario.' },
+      { tipo: 'multiple', texto: '¿Cómo se clasifican los grados de calidad del huevo?', opciones: ['1, 2 y 3', 'Grado AA (clara firme, yema alta), Grado A (uso general) y Grado B (repostería/revueltos)', 'Chico, mediano, grande', 'No existe clasificación oficial del huevo'], correcta: 1, explicacion: 'El grado AA es el de mayor calidad, ideal para huevo poché.' },
+      { tipo: 'vf', texto: 'La leche ultrapasteurizada (UHT) puede durar meses sin refrigeración antes de abrirse, a diferencia de la pasteurizada.', correcta: true, explicacion: 'La UHT se calienta a temperaturas más altas por segundos, extendiendo su vida de anaquel.' },
+      { tipo: 'multiple', texto: '¿En qué consiste el proceso de homogeneización de la leche?', opciones: ['Se le agrega agua', 'Se rompen mecánicamente los glóbulos de grasa para evitar que se separen o floten, logrando textura uniforme', 'Se hierve por 1 hora', 'Se le agregan conservadores'], correcta: 1, explicacion: 'La homogeneización evita que la grasa se separe de la leche.' },
+      { tipo: 'multiple', texto: '¿Cuáles son algunas de las funciones técnicas que cumple el huevo en la cocina, más allá de ser proteína?', opciones: ['Solo aporta color', 'Ligante, emulsionante, aireante, espesante, clarificante y de glaseado/dorado', 'Únicamente espesa líquidos', 'No tiene funciones técnicas relevantes'], correcta: 1, explicacion: 'El huevo tiene múltiples funciones que van mucho más allá de su valor nutricional.' },
+      { tipo: 'completar', texto: 'La clara del huevo coagula entre los 65°C y 70°C, mientras que la yema coagula entre los 75°C y ___°C.', respuesta: '80', explicacion: 'Ese margen de temperatura explica por qué se puede lograr una yema líquida con clara firme.' },
+      { tipo: 'multiple', texto: '¿Cómo se clasifican comercialmente las harinas de trigo según su contenido de proteína?', opciones: ['Harina para pastel (baja, 7-9%), harina todo uso (media, 9-11%) y harina de pan (alta, 11-13%)', 'Blanca, integral y de maíz', 'Todas las harinas tienen el mismo contenido de proteína', 'Solo existen dos tipos de harina'], correcta: 0, explicacion: 'El contenido de proteína determina cuánto gluten desarrolla la harina.' },
+      { tipo: 'multiple', texto: '¿Qué consecuencia se obtiene al utilizar harina de pan (alta en proteína) para elaborar un pastel?', opciones: ['El pastel queda más esponjoso', 'Se desarrolla demasiado gluten y la miga resulta dura y correosa', 'No hay ninguna diferencia', 'El pastel sube más rápido'], correcta: 1, explicacion: 'El exceso de gluten arruina la textura tierna esperada en un pastel.' },
+      { tipo: 'multiple', texto: '¿Qué diferencia composicional existe entre la harina de trigo y almidones puros como la maicena?', opciones: ['Son exactamente lo mismo', 'La harina combina almidón con proteína; la maicena es almidón puro, dando texturas translúcidas y brillantes', 'La maicena tiene más proteína que la harina', 'No hay ninguna diferencia de uso'], correcta: 1, explicacion: 'La maicena espesa sin aportar sabor a crudo ni opacidad.' },
+      { tipo: 'multiple', texto: '¿Cómo se dividen anatómicamente los productos del mar agrupados como moluscos?', opciones: ['Grandes y pequeños', 'Bivalvos (dos valvas), gasterópodos (un pie muscular) y cefalópodos (sin concha externa)', 'De agua dulce y salada', 'Comestibles y no comestibles'], correcta: 1, explicacion: 'Esta clasificación anatómica ayuda a entender su manejo y cocción.' },
+      { tipo: 'vf', texto: 'Un molusco bivalvo que suena hueco al golpearlo o está abierto antes de cocinarse indica que ya no está vivo y debe descartarse.', correcta: true, explicacion: 'Es una señal clara de que el molusco ya no es seguro para consumo.' },
+      { tipo: 'multiple', texto: '¿Cómo se comportan térmicamente los aceites neutros de fritura profunda frente al aceite de oliva?', opciones: ['Son idénticos en punto de humeo', 'Los aceites neutros tienen punto de humeo alto ideal para freír; el aceite de oliva tiene punto más bajo y sabor pronunciado para aderezos', 'El aceite de oliva siempre es mejor para freír', 'Ninguno sirve para freír'], correcta: 1, explicacion: 'Cada aceite tiene un uso técnico distinto según su punto de humeo.' },
+      { tipo: 'multiple', texto: '¿Cuál es la diferencia fundamental entre una grasa natural y una grasa hidrogenada procesada industrialmente?', opciones: ['No hay diferencia real', 'Las naturales existen así por su composición original; las hidrogenadas son aceites líquidos procesados para solidificarse, generando grasas trans', 'Las hidrogenadas siempre son más saludables', 'Las naturales siempre son líquidas'], correcta: 1, explicacion: 'El proceso de hidrogenación genera grasas trans, asociadas a riesgos para la salud.' },
+      { tipo: 'multiple', texto: '¿Cuál es la diferencia en el comportamiento de las grasas saturadas frente a las insaturadas al ser sometidas al calor?', opciones: ['Se comportan exactamente igual', 'Las saturadas tienen enlaces simples más estables al calor; las insaturadas tienen dobles enlaces que se rompen con facilidad, propensas a la rancidez', 'Las insaturadas nunca se echan a perder', 'Las saturadas siempre son líquidas'], correcta: 1, explicacion: 'La estabilidad química de las saturadas las hace más resistentes al calor prolongado.' }
+    ]
+  },
+  '2.3': {
+    titulo: 'Variedades y características físicas',
+    preguntas: [
+      { tipo: 'multiple', texto: '¿Qué atributos físicos universales evalúa un cocinero para determinar la calidad de un insumo fresco?', opciones: ['Solo el precio', 'Firmeza, color, humedad superficial, tamaño o calibre y aroma', 'Únicamente el color', 'Solo el tamaño'], correcta: 1, explicacion: 'Estos cinco atributos en conjunto determinan la calidad y frescura de un insumo.' },
+      { tipo: 'multiple', texto: '¿Cuáles son las señales de aceptación en la carne de res fresca?', opciones: ['Color rojo-café apagado y olor agrio', 'Color rojo cereza brillante, superficie ligeramente húmeda no viscosa, olor neutro y textura elástica', 'Color verdoso y superficie pegajosa', 'No existen señales confiables'], correcta: 1, explicacion: 'Estas son las características de una carne de res en óptimas condiciones.' },
+      { tipo: 'vf', texto: 'La carne de cerdo en buenas condiciones debe tener un color rosa pálido uniforme, grasa blanca y firme, y olor suave.', correcta: true, explicacion: 'Correcto, esas son las señales de aceptación de la carne de cerdo fresca.' },
+      { tipo: 'multiple', texto: '¿Cuáles son los indicios visuales y táctiles para aceptar un pescado entero fresco?', opciones: ['Ojos hundidos y opacos', 'Ojos brillantes y abombados, agallas rojo intenso, escamas firmemente adheridas, olor a mar fresco', 'Solo el color de la piel', 'No hay indicios confiables'], correcta: 1, explicacion: 'Estas señales confirman la frescura de un pescado entero.' },
+      { tipo: 'multiple', texto: '¿Qué diferencia culinaria fundamental existe entre una papa cerosa y una papa harinosa?', opciones: ['Son exactamente iguales', 'La cerosa tiene bajo almidón y mantiene su forma (ideal para ensaladas); la harinosa tiene alto almidón y se deshace al cocer (ideal para purés)', 'La cerosa siempre es más grande', 'La harinosa nunca se usa en cocina'], correcta: 1, explicacion: 'El contenido de almidón determina el uso ideal de cada variedad.' },
+      { tipo: 'multiple', texto: '¿Qué mide exactamente la unidad SHU de la escala Scoville en los chiles?', opciones: ['El tamaño del chile', 'La concentración de capsaicina, determinando el nivel de picor de forma objetiva', 'El color del chile', 'El precio del chile'], correcta: 1, explicacion: 'SHU mide objetivamente el nivel de picor por concentración química.' },
+      { tipo: 'vf', texto: 'La presencia de coloración verdosa o brotes en los tubérculos de papa indica solanina, un alcaloide tóxico por exposición a la luz.', correcta: true, explicacion: 'Correcto, esos tubérculos deben descartarse o recortarse profundamente en la zona afectada.' },
+      { tipo: 'multiple', texto: '¿Qué pautas mínimas incluye un protocolo de evaluación sensorial sistemática para comparar variedades de un ingrediente?', opciones: ['Solo probar al azar', 'Presentar muestras bajo las mismas condiciones, codificarlas anónimamente, evaluarlas en orden aleatorio y registrar por escrito', 'Confiar únicamente en la memoria', 'No es necesario ningún protocolo'], correcta: 1, explicacion: 'Este protocolo asegura una comparación justa y objetiva entre variedades.' }
+    ]
+  },
+  '2.4': {
+    titulo: 'Cualidades gastronómicas',
+    preguntas: [
+      { tipo: 'multiple', texto: '¿Cuáles son los cinco sabores básicos reconocidos en la percepción gustativa humana?', opciones: ['Dulce, salado, picante, frío, caliente', 'Dulce, salado, ácido, amargo y umami', 'Solo dulce y salado', 'Ácido, amargo, picante, dulce, graso'], correcta: 1, explicacion: 'Estos son los cinco sabores básicos reconocidos científicamente.' },
+      { tipo: 'multiple', texto: '¿Qué compuesto químico genera la percepción del sabor umami?', opciones: ['El azúcar', 'El glutamato libre, que se concentra por maduración, fermentación o cocción lenta', 'La sal común', 'El vinagre'], correcta: 1, explicacion: 'El glutamato es el responsable directo del quinto sabor.' },
+      { tipo: 'multiple', texto: '¿Cuáles son las cinco propiedades funcionales principales que un ingrediente puede aportar a una preparación?', opciones: ['Color, sabor, olor, textura, temperatura', 'Espesante, emulsionante, gelificante, aireante y leudante', 'Dulce, salado, ácido, amargo, umami', 'Grande, pequeño, redondo, plano'], correcta: 1, explicacion: 'Estas propiedades funcionales son distintas de las propiedades sensoriales.' },
+      { tipo: 'vf', texto: 'La grenetina forma una red que solidifica al enfriarse, mientras que el agar-agar (de origen algal) puede gelificar incluso a temperaturas elevadas.', correcta: true, explicacion: 'Correcto, esa es la diferencia funcional clave entre ambos gelificantes.' },
+      { tipo: 'multiple', texto: '¿En qué consiste la teoría moderna del Food Pairing?', opciones: ['Combinar ingredientes solo por tradición', 'Propone que dos ingredientes que comparten compuestos aromáticos volátiles tienden a combinar bien', 'Solo aplica a los postres', 'Se basa únicamente en el color de los alimentos'], correcta: 1, explicacion: 'El Food Pairing se basa en la afinidad química de los compuestos aromáticos.' },
+      { tipo: 'multiple', texto: '¿Cuáles son los tres principios básicos que rigen el maridaje intencional de sabores?', opciones: ['Precio, color y tamaño', 'El contraste, la afinidad aromática y la intensidad relativa', 'Solo la temperatura', 'Dulce y salado únicamente'], correcta: 1, explicacion: 'Estos tres principios guían la construcción de combinaciones exitosas.' },
+      { tipo: 'multiple', texto: '¿Por qué las verduras de hoja verde pierden su brillo y se tornan de color verde oliva opaco en medios ácidos prolongados?', opciones: ['Por el frío', 'Porque el ácido desplaza los iones de magnesio del centro de la clorofila, formando feofitina', 'Por la sal', 'No hay una razón química real'], correcta: 1, explicacion: 'La feofitina es el compuesto pardo-verdoso opaco resultante de esa reacción.' },
+      { tipo: 'vf', texto: 'Agregar sal al agua de cocción de vegetales verdes robustos ayuda a mantener la turgencia celular por presión osmótica.', correcta: true, explicacion: 'La sal contribuye a preservar mejor la textura firme del vegetal.' },
+      { tipo: 'multiple', texto: '¿Cuál es el propósito de "nacarizar" un grano de arroz antes de añadir el líquido de cocción?', opciones: ['Darle color', 'Sofreírlo brevemente en grasa para cubrir cada grano con una película que evita que el almidón se libere de golpe, logrando un grano más suelto', 'Endulzarlo', 'No tiene ningún propósito técnico'], correcta: 1, explicacion: 'Nacarizar mejora la textura final del grano cocido.' },
+      { tipo: 'multiple', texto: '¿Qué función molecular cumplen los agentes emulsionantes como la lecitina de la yema de huevo?', opciones: ['No tienen función real', 'Tienen un extremo hidrófilo (afín al agua) y un extremo lipófilo (afín a la grasa), uniendo ambos líquidos de forma estable', 'Solo aportan color amarillo', 'Espesan sin mezclar nada'], correcta: 1, explicacion: 'Esa doble afinidad molecular es la base de toda emulsión estable.' }
+    ]
+  },
+  '3.1': {
+    titulo: 'Conocimientos generales para la elaboración de platillos',
+    preguntas: [
+      { tipo: 'multiple', texto: '¿Cuáles son las tres grandes familias en las que se divide toda técnica de cocción?', opciones: ['Rápida, media, lenta', 'Por concentración, por expansión y mixta', 'Fría y caliente', 'Con grasa y sin grasa'], correcta: 1, explicacion: 'Estas tres familias agrupan toda técnica según cómo se transmite el calor.' },
+      { tipo: 'multiple', texto: '¿En qué consiste una técnica de cocción por concentración?', opciones: ['Sumerge el alimento en líquido desde el inicio', 'Usa temperaturas altas y tiempos cortos para sellar la superficie rápidamente, concentrando jugos y sabores adentro', 'Combina dos técnicas siempre', 'Solo se aplica a postres'], correcta: 1, explicacion: 'El sellado rápido concentra los jugos en el interior del alimento.' },
+      { tipo: 'vf', texto: 'En una técnica de cocción por expansión, el alimento se sumerge o expone a un medio líquido o vapor desde el inicio, permitiendo un intercambio gradual de componentes.', correcta: true, explicacion: 'Correcto, esa es la definición de la técnica por expansión.' },
+      { tipo: 'multiple', texto: '¿Cómo se define una técnica de cocción mixta?', opciones: ['Es exactamente igual a la concentración', 'Combina ambas familias: primero se sella por concentración, luego se termina por expansión en un líquido durante tiempo prolongado', 'Solo se usa en repostería', 'No requiere ninguna preparación previa'], correcta: 1, explicacion: 'La técnica mixta combina lo mejor de ambos mundos: sabor y ternura.' },
+      { tipo: 'multiple', texto: '¿Qué métodos específicos engloba la familia de técnicas por concentración?', opciones: ['Hervido y escalfado', 'Sellado o salteado, asado o grillado, horneado o rostizado, y fritura', 'Solo el vapor', 'Estofado y guisado'], correcta: 1, explicacion: 'Todos estos métodos usan temperaturas altas para sellar rápido.' },
+      { tipo: 'multiple', texto: '¿Qué métodos específicos integran la familia de técnicas por expansión?', opciones: ['Sellado y salteado', 'El hervido, el escalfado, el blanqueado y la cocción al vapor', 'Solo el horneado', 'El braseado únicamente'], correcta: 1, explicacion: 'Todas estas técnicas sumergen o exponen el alimento a un medio líquido o vapor.' },
+      { tipo: 'completar', texto: 'El calor lento y prolongado en medio líquido durante una cocción mixta transforma gradualmente el colágeno duro en ___ suave.', respuesta: 'gelatina', explicacion: 'La transformación de colágeno en gelatina es lo que ablanda cortes duros.' },
+      { tipo: 'vf', texto: 'Un corte tierno como el filete o el rib eye se arruina si se somete a una cocción mixta o prolongada, porque no posee la estructura conectiva necesaria para ese proceso.', correcta: true, explicacion: 'Correcto, pierde humedad y se reseca innecesariamente.' },
+      { tipo: 'multiple', texto: '¿Cuáles son los dos hábitos motrices básicos que deben automatizarse para el manejo seguro del cuchillo?', opciones: ['Cortar rápido sin mirar', 'Mantener una empuñadura firme con índice y pulgar en la base de la hoja, y curvar los dedos de la mano guía hacia dentro ("garra")', 'Usar guantes de metal siempre', 'No hay hábitos específicos que aprender'], correcta: 1, explicacion: 'Estos dos hábitos previenen accidentes al cortar.' }
+    ]
+  },
+  '3.2.1': {
+    titulo: 'Carnes, aves, pescados y mariscos',
+    preguntas: [
+      { tipo: 'multiple', texto: '¿Qué ventaja aporta realizar el deshuesado a favor de la estructura natural del músculo?', opciones: ['No tiene ninguna ventaja real', 'Se aprovecha mayor cantidad de carne y se deja menos desperdicio', 'Es más rápido pero desperdicia más carne', 'Solo cambia la presentación visual'], correcta: 1, explicacion: 'Seguir la estructura natural evita cortar carne innecesariamente.' },
+      { tipo: 'vf', texto: 'Es fundamental realizar un porcionado con tamaño estrictamente consistente porque las piezas irregulares se cuecen a ritmos distintos dentro de la misma tanda.', correcta: true, explicacion: 'Correcto, esto genera cocciones inconsistentes si no se cuida el tamaño.' },
+      { tipo: 'multiple', texto: '¿Qué impacto físico tiene cortar la carne en contra de la dirección de la fibra muscular al servir?', opciones: ['No tiene ningún efecto', 'Acorta las fibras en cada rebanada, haciendo que la carne se perciba más suave al masticar', 'Hace que la carne se vea más grande', 'Solo cambia el color'], correcta: 1, explicacion: 'Cortar contra la fibra es clave para la percepción de terneza.' },
+      { tipo: 'multiple', texto: '¿Qué finalidad técnica tiene la maduración inicial en cámara fría de la canal antes del desposte?', opciones: ['Solo enfriar la carne', 'El tiempo bajo temperatura controlada transforma la estructura muscular, mejorando terneza y sabor', 'No tiene ninguna finalidad técnica', 'Sirve solo para transportarla'], correcta: 1, explicacion: 'La maduración mejora la calidad final de la carne.' },
+      { tipo: 'multiple', texto: '¿Cuáles son los tres criterios que un cocinero experimentado usa para determinar el punto de cocción?', opciones: ['Solo el color', 'Color interno y externo, consistencia al tacto/presión, y temperatura al núcleo con termómetro de sonda', 'Únicamente el tiempo en el fuego', 'El olor exclusivamente'], correcta: 1, explicacion: 'Estos tres criterios combinados dan un diagnóstico confiable.' },
+      { tipo: 'multiple', texto: '¿Por qué los puntos de cocción poco hechos están permitidos en cortes enteros de res, a diferencia de la carne molida?', opciones: ['No hay ninguna diferencia de riesgo', 'Porque en cortes enteros el riesgo microbiano se concentra en la superficie, la cual ya fue eliminada por el sellado exterior', 'Porque la carne molida siempre es más cara', 'Porque los cortes enteros no tienen bacterias'], correcta: 1, explicacion: 'La carne molida distribuye posibles bacterias de superficie por todo el interior, por eso requiere cocción completa.' },
+      { tipo: 'multiple', texto: '¿Cuál es el procedimiento técnico correcto para desvenar un camarón?', opciones: ['Se hace antes de pelarlo', 'Se realiza después de pelarlo, con un corte superficial poco profundo a lo largo del dorso para retirar el conducto digestivo', 'No es necesario desvenar los camarones', 'Se hace hirviendo el camarón entero'], correcta: 1, explicacion: 'El desvenado se hace tras pelar, con un corte superficial cuidadoso.' },
+      { tipo: 'vf', texto: 'Para abrir de forma segura un molusco bivalvo como el ostión, se inserta un cuchillo especial por la unión de las valvas y se corta el músculo aductor protegiendo la mano con un paño.', correcta: true, explicacion: 'Correcto, este es el procedimiento seguro y correcto.' },
+      { tipo: 'multiple', texto: '¿En qué consiste la limpieza técnica de un calamar antes de su cocción?', opciones: ['Solo se enjuaga con agua', 'Separar los tentáculos, retirar el cartílago interno (pluma) y las vísceras, y despellejar la membrana exterior si se busca textura más tersa', 'Se cocina completo sin limpiar', 'Solo se le quita la cabeza'], correcta: 1, explicacion: 'Este proceso completo asegura una textura y sabor adecuados.' }
+    ]
+  },
+  '3.2.2': {
+    titulo: 'Vegetales y frutos',
+    preguntas: [
+      { tipo: 'multiple', texto: '¿Cuáles son las dos formas básicas en que un cocinero mueve el cuchillo al cortar vegetales?', opciones: ['Rápido y lento', 'El pivote (punta fija como palanca) y la caída libre (aprovechando el peso del cuchillo)', 'Vertical y horizontal solamente', 'No hay formas estandarizadas'], correcta: 1, explicacion: 'Estos son los dos movimientos técnicos fundamentales del corte.' },
+      { tipo: 'completar', texto: 'El corte Brunoise produce cubos muy pequeños de 3 a ___ milímetros por lado.', respuesta: '5', explicacion: 'El Brunoise mide entre 3 y 5 mm por lado.' },
+      { tipo: 'multiple', texto: '¿Qué define al corte Mirepoix y cuál es su uso habitual?', opciones: ['Es un corte fino y decorativo', 'Es un corte grueso e irregular aplicado a verduras que se cocinan por tiempos largos, para aportar sabor en caldos o fondos', 'Solo se usa para ensaladas', 'Es exclusivo de frutas'], correcta: 1, explicacion: 'El Mirepoix no requiere precisión estética porque se cuela después de aportar sabor.' },
+      { tipo: 'multiple', texto: '¿A qué vegetal se aplica de forma exclusiva el corte Concassé y en qué consiste?', opciones: ['A la papa, en tiras finas', 'Al jitomate pelado y sin semilla, picado en trozos pequeños', 'A la cebolla, en juliana', 'Al chile, en rodajas'], correcta: 1, explicacion: 'El Concassé es específico del jitomate procesado de esa manera.' },
+      { tipo: 'multiple', texto: '¿Qué técnica de corte se aplica específicamente en hojas como la lechuga, col o albahaca?', opciones: ['Brunoise', 'El Chiffonade, que consiste en enrollar las hojas antes de cortarlas en tiras finas', 'Mirepoix', 'Concassé'], correcta: 1, explicacion: 'El Chiffonade es exclusivo para hojas enrolladas y cortadas finamente.' },
+      { tipo: 'vf', texto: 'El corte Pluma es similar a la juliana pero se aplica exclusivamente a la cebolla, siguiendo el sentido natural de sus capas.', correcta: true, explicacion: 'Correcto, el corte Pluma respeta la estructura de capas de la cebolla.' },
+      { tipo: 'multiple', texto: '¿Qué diferencias culinarias existen entre las papas cerosas y las harinosas?', opciones: ['No hay ninguna diferencia real', 'Las cerosas tienen bajo almidón y mantienen su forma (ensaladas); las harinosas tienen alto almidón y se deshacen (purés y horneados)', 'Las cerosas siempre son moradas', 'Las harinosas nunca se usan en cocina'], correcta: 1, explicacion: 'El contenido de almidón determina el uso ideal de cada variedad de papa.' },
+      { tipo: 'completar', texto: 'Los bastones gruesos clásicos usados para papa a la francesa se llaman corte ___.', respuesta: 'Pont-neuf', explicacion: 'El Pont-neuf es el corte grueso clásico de la papa frita francesa.' },
+      { tipo: 'multiple', texto: '¿Cómo se obtienen las papas Noisette y Parisienne?', opciones: ['Se cortan en cubos', 'Utilizando un sacabocados o cuchara boleadora; las Noisette son más pequeñas que las Parisienne', 'Se rallan finamente', 'No existen esos cortes de papa'], correcta: 1, explicacion: 'Ambas se obtienen con boleadora, solo cambia el tamaño de la bola.' },
+      { tipo: 'multiple', texto: '¿Qué reacción provoca el oscurecimiento de frutas y vegetales al cortarse, y cómo se previene?', opciones: ['Es solo suciedad, se lava y ya', 'Es pardeamiento enzimático por exposición al oxígeno; se previene con ácido (limón/vinagre) o cubriendo el corte', 'No se puede prevenir de ninguna forma', 'Se previene calentando el vegetal'], correcta: 1, explicacion: 'El ácido o cubrir el corte inhibe la enzima responsable del oscurecimiento.' },
+      { tipo: 'vf', texto: 'El blanqueado con choque térmico en agua con hielo detiene las reacciones del calor y fija la clorofila, manteniendo un color verde intenso y brillante.', correcta: true, explicacion: 'Correcto, ese es justamente el propósito del choque térmico tras blanquear.' }
+    ]
+  },
+  '3.2.3': {
+    titulo: 'Semillas y cereales',
+    preguntas: [
+      { tipo: 'multiple', texto: '¿Qué proporción de grano a líquido se requiere para la cocción correcta del arroz blanco?', opciones: ['1:1', '1:2', '1:4', '2:1'], correcta: 1, explicacion: 'El arroz blanco requiere 1 parte de grano por 2 de líquido, cociendo de 15 a 18 minutos.' },
+      { tipo: 'multiple', texto: '¿Qué proporción y tiempo requiere el arroz integral frente al blanco?', opciones: ['Igual proporción y tiempo que el blanco', '1 parte de arroz por 2.5 de líquido, con 35 a 40 minutos por la resistencia del salvado', 'Menos líquido y menos tiempo que el blanco', 'No se puede cocer arroz integral en casa'], correcta: 1, explicacion: 'El salvado del arroz integral requiere más líquido y tiempo de cocción.' },
+      { tipo: 'completar', texto: 'El cuscús se cocina con una proporción de 1 parte de grano por ___ de líquido, en solo 5 minutos de reposo.', respuesta: '1', explicacion: 'El cuscús usa proporción 1:1 y se hidrata solo con reposo.' },
+      { tipo: 'vf', texto: 'El remojo previo de las leguminosas secas hidrata parcialmente la semilla, reduce su tiempo de cocción y ayuda a disolver compuestos asociados a la flatulencia.', correcta: true, explicacion: 'Correcto, el remojo tiene esos tres beneficios prácticos.' },
+      { tipo: 'multiple', texto: '¿Qué leguminosa de uso común es una excepción frecuente, ya que puede cocinarse sin remojo previo?', opciones: ['El frijol', 'La lenteja, por su tamaño pequeño y cáscara delgada', 'El garbanzo', 'La haba'], correcta: 1, explicacion: 'La lenteja no necesita remojo previo gracias a su tamaño y cáscara delgada.' },
+      { tipo: 'multiple', texto: '¿Cómo se verifica correctamente el punto de cocción de un grano o leguminosa en la cocina profesional?', opciones: ['Solo por el tiempo transcurrido', 'Mordiendo directamente un grano para comprobar que esté suave por completo, sin núcleo duro y crudo', 'Por el color del agua', 'Nunca se verifica, se confía en la receta'], correcta: 1, explicacion: 'La prueba de mordida es el método más confiable de verificación.' },
+      { tipo: 'multiple', texto: '¿Cuáles son los pasos clave para obtener un arroz blanco suelto y separado?', opciones: ['Solo hervirlo sin más pasos', 'Enjuagar en agua fría, sofreír brevemente en grasa (nacarizar), añadir líquido 1:2 tapado sin remover, y reposar 5 minutos', 'Cocerlo destapado revolviendo constantemente', 'No enjuagarlo nunca'], correcta: 1, explicacion: 'Estos pasos aseguran un arroz bien suelto y sin exceso de almidón liberado.' },
+      { tipo: 'vf', texto: 'La quinoa y la avena en hojuelas usan una proporción de 1 parte de grano por 2 de líquido, aunque sus tiempos de cocción son distintos.', correcta: true, explicacion: 'Correcto, la proporción es igual pero la quinoa tarda 15 min y la avena de 5 a 8 min.' }
+    ]
+  },
+  '3.2.4': {
+    titulo: 'Hierbas y especias',
+    preguntas: [
+      { tipo: 'multiple', texto: '¿Por qué el uso de hierbas y especias conecta de manera tan directa con la memoria y la emoción humana?', opciones: ['Es solo una idea sin fundamento científico', 'Porque el centro olfativo del cerebro está conectado de forma muy directa con las áreas de memoria y emoción', 'Porque las especias son caras', 'No existe ninguna conexión real'], correcta: 1, explicacion: 'El olfato tiene una conexión neurológica única con la memoria emocional.' },
+      { tipo: 'multiple', texto: '¿Cuál es la regla orientativa al sustituir una hierba fresca por su versión seca?', opciones: ['Se sustituyen en proporción exacta 1:1', 'Proporción de tres a uno en volumen: 1 cucharada de hierba fresca equivale a 1 cucharadita de hierba seca', 'Nunca se pueden sustituir', 'La seca siempre se usa en mayor cantidad que la fresca'], correcta: 1, explicacion: 'El secado concentra los compuestos aromáticos, por eso se usa menos cantidad.' },
+      { tipo: 'vf', texto: 'Una hierba fresca y su equivalente seco no se pueden sustituir en proporción directa uno a uno porque el secado concentra los compuestos aromáticos y elimina las notas más volátiles.', correcta: true, explicacion: 'Correcto, esa es la razón detrás de la regla de conversión 3:1.' },
+      { tipo: 'multiple', texto: '¿En qué momento de la cocción deben incorporarse las especias secas enteras o molidas y las hierbas robustas?', opciones: ['Al final, fuera del fuego', 'Al inicio de la cocción, ya que su liberación de aroma es lenta y se benefician del contacto prolongado con el calor', 'Nunca durante la cocción', 'Solo en crudo, nunca cocidas'], correcta: 1, explicacion: 'Las especias secas necesitan tiempo y calor para liberar completamente su aroma.' },
+      { tipo: 'multiple', texto: '¿Por qué las hierbas frescas delicadas deben agregarse casi al final de la cocción o tras retirar del fuego?', opciones: ['Para que se vean más verdes en la foto', 'Porque el calor prolongado destruye rápidamente sus aceites esenciales más volátiles y degrada su color', 'No importa cuándo se agreguen', 'Porque son más caras que las secas'], correcta: 1, explicacion: 'El calor prolongado arruina el aporte fresco de hierbas delicadas como el cilantro o la albahaca.' },
+      { tipo: 'multiple', texto: '¿Qué técnica se aplica a las especias enteras (como comino o cilantro en semilla) para intensificar su aroma?', opciones: ['Se congelan antes de usarse', 'Se tuestan brevemente en sartén seca sin aceite a fuego medio, uno o dos minutos', 'Se hierven por 10 minutos', 'No requieren ningún tratamiento previo'], correcta: 1, explicacion: 'El tostado en seco despierta los aceites esenciales de las especias enteras.' },
+      { tipo: 'multiple', texto: '¿Qué secuencia lógica se recomienda seguir al diseñar una mezcla propia de especias?', opciones: ['Mezclar todo al azar', 'Elegir una especia dominante, sumar una o dos de apoyo complementarias, añadir una nota de calor opcional y ajustar con sal al final', 'Usar siempre las mismas cinco especias', 'Empezar siempre por la sal'], correcta: 1, explicacion: 'Esta secuencia lógica ayuda a construir mezclas balanceadas y con propósito.' }
+    ]
+  }
+};
+
+
+
+const TEMAS = {
+  '1.1': ['👨‍🍳','🎩','🍽️','📋'],
+  '1.2': ['🔪','🥣','🧂','⏱️'],
+  '1.3': ['⚖️','🌡️','📏','🥄'],
+  '1.4': ['🌡️','🔥','❄️','⏲️'],
+  '1.5': ['⚖️','📐','🧮','🥣'],
+  '2.1': ['🚚','📦','🧾','🥕'],
+  '2.2': ['🥚','🥛','🍗','🐟'],
+  '2.3': ['🌶️','🥔','🍅','🫑'],
+  '2.4': ['👅','😋','🍷','🎨'],
+  '3.1': ['🍳','🔥','💧','⏱️'],
+  '3.2.1': ['🥩','🐔','🐟','🦐'],
+  '3.2.2': ['🥦','🍎','🔪','🥬'],
+  '3.2.3': ['🌾','🍚','🫘','🥣'],
+  '3.2.4': ['🌿','🌱','🧄','🫙']
+};
+const ICONOS = TEMAS[subtema] || ['🍳','🔪','🥄','🍽️','🥘','🧂'];
+
+const PUESTOS = ['Steward', 'Ayudante de cocina', 'Commis', 'Chef de partida', 'Sous Chef', 'Chef Ejecutivo', 'Dueño del restaurante'];
+const FRASES_BIEN = [
+  '¡Excelente!', '¡Vas que vuelas!', '¡Eres un crack!', '¡Así se cocina!',
+  '¡De chef!', '¡Perfecto!', '¡Sigue así!', '¡Tienes buen sazón para esto!'
+];
+const FRASES_MAL = [
+  'No te rindas.', 'Casi lo tienes.', 'La próxima la clavas.',
+  'Todo buen chef se equivoca antes de dominar la técnica.', 'Sigue practicando.'
+];
+
+let indice = 0;
+let aciertos = 0;
+let respondida = false;
+let racha = 0;
+let puestoActual = 0;
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function tono(frecuencia, duracion, tipoOnda = 'sine', volumen = 0.15) {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = tipoOnda;
+    osc.frequency.value = frecuencia;
+    gain.gain.value = volumen;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duracion);
+    osc.stop(ctx.currentTime + duracion);
+  } catch (e) {}
+}
+function sonidoAcierto(nivelCombo) {
+  const base = 523 + Math.min(nivelCombo, 6) * 40;
+  tono(base, 0.12, 'triangle', 0.18);
+  setTimeout(() => tono(base * 1.25, 0.15, 'triangle', 0.18), 90);
+}
+function sonidoError() { tono(180, 0.25, 'sawtooth', 0.12); }
+function sonidoAscenso() {
+  [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => tono(f, 0.18, 'triangle', 0.2), i * 100));
+}
+function vibrar(patron) { if (navigator.vibrate) navigator.vibrate(patron); }
+
+function crearFondoAmbiental() {
+  const cont = document.getElementById('fondoAmbiental');
+  for (let i = 0; i < 9; i++) {
+    const span = document.createElement('span');
+    span.className = 'flotante';
+    span.textContent = ICONOS[Math.floor(Math.random() * ICONOS.length)];
+    span.style.left = Math.random() * 88 + 'vw';
+    span.style.top = Math.random() * 88 + 'vh';
+    span.style.animationDuration = (9 + Math.random() * 10) + 's';
+    span.style.animationDelay = (Math.random() * 5) + 's';
+    cont.appendChild(span);
+  }
+}
+
+function lanzarExplosion() {
+  const cantidad = 16;
+  for (let i = 0; i < cantidad; i++) {
+    const span = document.createElement('span');
+    span.className = 'particula';
+    span.textContent = ICONOS[Math.floor(Math.random() * ICONOS.length)];
+    document.body.appendChild(span);
+
+    const angulo = Math.random() * Math.PI * 2;
+    const distancia = 110 + Math.random() * 200;
+    const dx = Math.cos(angulo) * distancia;
+    const dy = Math.sin(angulo) * distancia;
+
+    requestAnimationFrame(() => {
+      span.style.transform = `translate(${dx}px, ${dy}px) rotate(${Math.random()*360}deg) scale(1.5)`;
+    });
+
+    setTimeout(() => {
+      span.style.transition = 'transform 1.1s cubic-bezier(.4,0,1,1), opacity 1.1s ease-in';
+      span.style.transform += ` translateY(${window.innerHeight}px)`;
+      span.style.opacity = '0';
+    }, 420);
+
+    setTimeout(() => span.remove(), 1700);
+  }
+}
+
+function actualizarRacha() {
+  document.getElementById('racha').textContent = racha > 0 ? `🔥 Racha: ${racha}` : '';
+}
+
+function revisarAscenso() {
+  const nuevoPuesto = Math.min(Math.floor(racha / 2), PUESTOS.length - 1);
+  if (nuevoPuesto > puestoActual) {
+    puestoActual = nuevoPuesto;
+    sonidoAscenso();
+    vibrar([80, 40, 80, 40, 150]);
+    const banner = document.getElementById('ascenso');
+    banner.textContent = `🎉 ¡Ascenso! Ahora eres: ${PUESTOS[puestoActual]}`;
+    banner.style.display = 'block';
+    banner.style.animation = 'none';
+    void banner.offsetWidth;
+    banner.style.animation = 'aparecer 0.4s ease-out, desaparecer 0.4s ease-in 2.6s forwards';
+    setTimeout(() => { banner.style.display = 'none'; }, 3200);
+  }
+}
+
+function mostrarPregunta() {
+  respondida = false;
+  const p = data.preguntas[indice];
+  document.getElementById('progreso').textContent = `Pregunta ${indice + 1} de ${data.preguntas.length}`;
+  document.getElementById('preguntaTexto').textContent = p.texto;
+  document.getElementById('retro').style.display = 'none';
+  document.getElementById('siguiente').style.display = 'none';
+  actualizarRacha();
+
+  const tipoTag = document.getElementById('tipoPregunta');
+  const cont = document.getElementById('opciones');
+  cont.innerHTML = '';
+
+  if (p.tipo === 'multiple') {
+    tipoTag.textContent = 'Opción múltiple';
+    p.opciones.forEach((op, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'opcion';
+      btn.textContent = op;
+      btn.onclick = () => responderOpcion(i);
+      cont.appendChild(btn);
+    });
+  } else if (p.tipo === 'vf') {
+    tipoTag.textContent = 'Verdadero o falso';
+    const fila = document.createElement('div');
+    fila.className = 'vf-fila';
+    const btnV = document.createElement('button');
+    btnV.className = 'opcion'; btnV.textContent = 'Verdadero';
+    btnV.onclick = () => responderVF(true);
+    const btnF = document.createElement('button');
+    btnF.className = 'opcion'; btnF.textContent = 'Falso';
+    btnF.onclick = () => responderVF(false);
+    fila.appendChild(btnV); fila.appendChild(btnF);
+    cont.appendChild(fila);
+  } else if (p.tipo === 'completar') {
+    tipoTag.textContent = 'Completa el espacio';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = 'inputCompletar';
+    input.placeholder = 'Escribe tu respuesta';
+    const btn = document.createElement('button');
+    btn.id = 'btnResponderTexto';
+    btn.textContent = 'Responder';
+    btn.onclick = () => responderCompletar();
+    cont.appendChild(input);
+    cont.appendChild(btn);
+  }
+}
+
+function procesarResultado(esCorrecta, explicacion) {
+  const retro = document.getElementById('retro');
+  retro.style.display = 'block';
+  if (esCorrecta) {
+    aciertos++;
+    racha++;
+    sonidoAcierto(racha);
+    vibrar(40);
+    lanzarExplosion();
+    revisarAscenso();
+    const frase = FRASES_BIEN[Math.floor(Math.random() * FRASES_BIEN.length)];
+    retro.className = 'retro ok';
+    retro.innerHTML = `<span class="frase">${frase}</span><strong>Correcto.</strong> ${explicacion}`;
+  } else {
+    racha = 0;
+    sonidoError();
+    vibrar([60, 40, 60]);
+    const frase = FRASES_MAL[Math.floor(Math.random() * FRASES_MAL.length)];
+    retro.className = 'retro mal';
+    retro.innerHTML = `<span class="frase">${frase}</span><strong>Incorrecto.</strong> ${explicacion}`;
+  }
+  actualizarRacha();
+  document.getElementById('siguiente').style.display = 'block';
+}
+
+function responderOpcion(i) {
+  if (respondida) return;
+  respondida = true;
+  const p = data.preguntas[indice];
+  const botones = document.querySelectorAll('#opciones .opcion');
+  botones.forEach((b, idx) => {
+    b.disabled = true;
+    if (idx === p.correcta) b.classList.add('correcta');
+    else if (idx === i) b.classList.add('incorrecta');
+  });
+  procesarResultado(i === p.correcta, p.explicacion);
+}
+
+function responderVF(valor) {
+  if (respondida) return;
+  respondida = true;
+  const p = data.preguntas[indice];
+  const botones = document.querySelectorAll('#opciones .opcion');
+  botones.forEach((b) => {
+    b.disabled = true;
+    const esVerdadero = b.textContent === 'Verdadero';
+    if (esVerdadero === p.correcta) b.classList.add('correcta');
+    else if (esVerdadero === valor) b.classList.add('incorrecta');
+  });
+  procesarResultado(valor === p.correcta, p.explicacion);
+}
+
+function responderCompletar() {
+  if (respondida) return;
+  respondida = true;
+  const p = data.preguntas[indice];
+  const input = document.getElementById('inputCompletar');
+  const btn = document.getElementById('btnResponderTexto');
+  input.disabled = true;
+  btn.disabled = true;
+  const respuestaOk = input.value.trim().toLowerCase() === p.respuesta.trim().toLowerCase();
+  input.classList.add(respuestaOk ? 'correcta' : 'incorrecta');
+  procesarResultado(respuestaOk, `${p.explicacion} (Respuesta correcta: ${p.respuesta})`);
+}
+
+document.getElementById('siguiente').onclick = () => {
+  indice++;
+  if (indice < data.preguntas.length) {
+    mostrarPregunta();
+  } else {
+    mostrarFinal();
+  }
+};
+
+const PUNTOS_POR_BLOQUE = { 'bases-culinarias': { '1': 20/5, '2': 20/4, '3': 20/5 } };
+
+async function registrarParticipacionSiAplica() {
+  const guardado = localStorage.getItem('jrg_alumno');
+  if (!guardado) return { registrado: false, motivo: 'sin_sesion' };
+  const alumno = JSON.parse(guardado);
+  if (!alumno.id) return { registrado: false, motivo: 'sin_id' };
+  const bloque = subtema.split('.')[0];
+  try {
+    const fbConfig = await import('./firebase-config.js');
+    const firestoreMod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+    const refConfig = firestoreMod.doc(fbConfig.db, 'materias', materia, 'grupos', alumno.grupo, 'config', 'bloquesAbiertos');
+    const snapConfig = await firestoreMod.getDoc(refConfig);
+    const config = snapConfig.exists() ? snapConfig.data() : {};
+    if (config['bloque' + bloque] !== true) return { registrado: false, motivo: 'bloque_cerrado' };
+    const puntos = (PUNTOS_POR_BLOQUE[materia] && PUNTOS_POR_BLOQUE[materia][bloque]) || 4;
+    const refParticipacion = firestoreMod.doc(fbConfig.db, 'materias', materia, 'grupos', alumno.grupo, 'alumnos', alumno.id, 'participacion', subtema);
+    await firestoreMod.setDoc(refParticipacion, { puntos, completado: true, fecha: new Date().toISOString() });
+    return { registrado: true, puntos };
+  } catch (err) {
+    console.warn('No se pudo registrar participación:', err);
+    return { registrado: false, motivo: 'error_red' };
+  }
+}
+
+function mostrarFinal() {
+  document.getElementById('juego').style.display = 'none';
+  const final = document.getElementById('final');
+  final.style.display = 'block';
+  const total = data.preguntas.length;
+  if (aciertos === total) {
+    document.getElementById('resultadoTitulo').textContent = '¡Subtema completado!';
+    document.getElementById('resultadoTexto').textContent = `Respondiste ${aciertos} de ${total} correctamente. Puesto alcanzado: ${PUESTOS[puestoActual]}.`;
+    registrarParticipacionSiAplica().then((resultado) => {
+      let detalle = document.getElementById('detalleParticipacion');
+      if (!detalle) {
+        detalle = document.createElement('p');
+        detalle.id = 'detalleParticipacion';
+        detalle.style.cssText = 'color:#a89f8d; font-size:0.85rem; margin-top:10px;';
+        document.getElementById('final').appendChild(detalle);
+      }
+      if (resultado.registrado) {
+        detalle.textContent = `Se registraron ${resultado.puntos.toFixed(1)} pts de participación.`;
+      } else if (resultado.motivo === 'bloque_cerrado') {
+        detalle.textContent = 'Este bloque aún no está abierto para responder — inténtalo cuando tu docente lo active.';
+      } else if (resultado.motivo === 'sin_sesion' || resultado.motivo === 'sin_id') {
+        detalle.textContent = 'Inicia sesión desde Actividades para que tu progreso se guarde.';
+      }
+    });
+  } else {
+    document.getElementById('resultadoTitulo').textContent = 'Te faltó alguna';
+    document.getElementById('resultadoTexto').textContent = `Respondiste ${aciertos} de ${total} correctamente. Vuelve a contestar TODAS para que cuente.`;
+  }
+}
+
+document.getElementById('reintentar').onclick = () => {
+  indice = 0; aciertos = 0; racha = 0; puestoActual = 0;
+  document.getElementById('final').style.display = 'none';
+  document.getElementById('juego').style.display = 'block';
+  mostrarPregunta();
+};
+
+const data = BANCO[subtema];
+document.getElementById('tituloSubtema').textContent = data ? `${subtema} ${data.titulo}` : 'Subtema';
+
+crearFondoAmbiental();
+
+if (data) {
+  mostrarPregunta();
+} else {
+  document.getElementById('preguntaTexto').textContent = 'Este subtema todavía no tiene preguntas cargadas.';
+}
+</script>
+<script src="menu.js"></script>
+</body>
+</html>
