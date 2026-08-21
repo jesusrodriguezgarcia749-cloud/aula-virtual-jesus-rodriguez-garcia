@@ -9,7 +9,7 @@
     { icono: '📖', texto: 'Compendio', href: `compendio.html?materia=${materiaActual}` },
     { icono: '✅', texto: 'Actividades', href: 'actividades.html' },
     { icono: '📝', texto: 'Examen en Línea', href: 'examen.html' },
-    { icono: '📊', texto: 'Mi Progreso', href: '#', proximamente: true },
+    { icono: '📊', texto: 'Mi Progreso', href: 'mi-progreso.html' },
     { icono: '🔑', texto: 'Panel Docente', href: 'admin.html' },
   ];
 
