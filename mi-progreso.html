@@ -331,6 +331,30 @@ async function mostrarPantallaProgreso(sesion) {
     const ensayosAcumulado = resumenBloques.reduce((a, b) => a + b.valores.ensayos, 0); // sobre 90
     const pctEvaluacionFinal = (ensayosAcumulado / 90) * 35;
 
+    // --- Evaluación Final del curso (distinta de la parcial por bloque) ---
+    // Según el programa oficial: Entrega de ensayos 35% + Investigaciones elaboradas 35% + Examen final 30%.
+    const pctEntregaEnsayos = (ensayosAcumulado / 90) * 35;
+
+    const examenesConDato = resumenBloques
+      .map((b) => bloques[b.bloque].examen)
+      .filter((e) => e && typeof e.calificacion === 'number');
+    const promedioExamenes = examenesConDato.length > 0
+      ? examenesConDato.reduce((a, e) => a + e.calificacion, 0) / examenesConDato.length
+      : null;
+    const pctExamenFinal = promedioExamenes !== null ? (promedioExamenes / 10) * 30 : null;
+
+    // La investigación final (proyecto "Deconstrucción de la Región de Campeche", Semana 16)
+    // aún no tiene un lugar de captura en el panel docente; se muestra pendiente hasta que exista.
+    const snapProyectoFinal = await fx.getDoc(ref('proyectoFinal', 'entrega'));
+    const proyectoFinal = snapProyectoFinal.exists() ? snapProyectoFinal.data() : null;
+    const pctInvestigacionFinal = (proyectoFinal && typeof proyectoFinal.calificacion === 'number')
+      ? (proyectoFinal.calificacion / 10) * 35
+      : null;
+
+    const partesListas = [pctEntregaEnsayos, pctInvestigacionFinal, pctExamenFinal].filter((v) => v !== null);
+    const totalEvaluacionFinal = pctEntregaEnsayos + (pctInvestigacionFinal || 0) + (pctExamenFinal || 0);
+    const evaluacionFinalCompleta = pctInvestigacionFinal !== null && pctExamenFinal !== null;
+
     // ===================== ARMAR HTML =====================
 
     // --- Participación ---
@@ -388,11 +412,32 @@ async function mostrarPantallaProgreso(sesion) {
         <span>Acumulado del cuatrimestre</span>
         <span class="num">${ensayosAcumulado.toFixed(1)} / 90 pts</span>
       </div>
-      <div class="nota-equivalencia">
-        Tus 15 bitácoras equivalen hoy a <span class="pct">${pctEvaluacionFinal.toFixed(1)}%</span> de tu Evaluación Final (35%
-        corresponde a la entrega de ensayos). Tu docente puede ajustar puntos al cierre según la presentación del compendio final.
-      </div>
     </section>`;
+
+    // --- Evaluación Final del curso ---
+    let htmlEvalFinal = `<section class="tarjeta"><h2>Evaluación Final del Curso <small>Entrega de ensayos 35% · Investigación elaborada 35% · Examen final 30%</small></h2>`;
+    htmlEvalFinal += `
+      <div class="fila-simple">
+        <span>Entrega de ensayos (tus 15 bitácoras)</span>
+        <span class="valor">${pctEntregaEnsayos.toFixed(1)} / 35%</span>
+      </div>
+      <div class="fila-simple">
+        <span>Investigación elaborada (proyecto final, Semana 16)</span>
+        <span class="valor">${pctInvestigacionFinal !== null ? pctInvestigacionFinal.toFixed(1) + ' / 35%' : 'Pendiente'}</span>
+      </div>
+      <div class="fila-simple">
+        <span>Examen final (promedio de tus 3 exámenes de bloque)</span>
+        <span class="valor">${pctExamenFinal !== null ? pctExamenFinal.toFixed(1) + ' / 30%' : 'Pendiente'}</span>
+      </div>`;
+    htmlEvalFinal += `
+      <div class="caja-acumulado">
+        <span>${evaluacionFinalCompleta ? 'Evaluación Final' : 'Acumulado hasta ahora'}</span>
+        <span class="num">${totalEvaluacionFinal.toFixed(1)} / 100%</span>
+      </div>`;
+    if (!evaluacionFinalCompleta) {
+      htmlEvalFinal += `<div class="nota-equivalencia">Este número todavía no es tu calificación final: faltan partes por capturar (marcadas como "Pendiente" arriba). Se actualizará conforme tu docente las registre.</div>`;
+    }
+    htmlEvalFinal += `</section>`;
 
     // --- Asistencia ---
     let htmlAsistencia = `<section class="tarjeta"><h2>Asistencia <small>10 pts por bloque</small></h2>`;
@@ -451,6 +496,7 @@ async function mostrarPantallaProgreso(sesion) {
       ${htmlEnsayos}
       ${htmlAsistencia}
       ${htmlCalifBloque}
+      ${htmlEvalFinal}
       ${htmlAvisos}
       <footer class="pie-progreso">Aula Virtual · Bases Culinarias · Panel personal del alumno</footer>
     `;
