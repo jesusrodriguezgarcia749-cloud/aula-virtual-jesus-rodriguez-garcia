@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Progreso — Aula Virtual JRG</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, 'Times New Roman', serif; background: #f2ece1; color: #17140f; min-height: 100vh; }
+  header { background: #17140f; color: #f2ece1; padding: 20px 24px; display: flex; align-items: center; gap: 12px; }
+  header a { color: #f2ece1; text-decoration: none; font-size: 1.4rem; margin-right: 8px; }
+  header h1 { font-size: 1.15rem; }
+  main { padding: 24px; max-width: 700px; margin: 0 auto; }
+
+  label { display: block; font-size: 0.85rem; color: #6b6252; margin-bottom: 4px; margin-top: 16px; }
+  input {
+    width: 100%; padding: 12px 14px; border-radius: 10px;
+    border: 1px solid #cfc6b6; font-family: inherit; font-size: 1rem; background: #fff;
+  }
+  button {
+    background: #d99a3d; color: #17140f; border: none;
+    padding: 12px 20px; border-radius: 30px; font-weight: bold; font-size: 0.95rem; cursor: pointer;
+  }
+  .btn-principal { width: 100%; margin-top: 16px; }
+  .btn-secundario { background: none; border: 1px solid #6b6252; color: #6b6252; width: 100%; margin-top: 10px; }
+
+  .texto-ayuda { color: #6b6252; font-size: 0.9rem; line-height: 1.5; margin: 6px 0 14px; }
+  .mensaje-error { color: #b04a3a; font-size: 0.88rem; margin-top: 8px; display: none; }
+  .cargando { text-align: center; color: #6b6252; padding: 60px 0; }
+
+  .tarjeta-bloque {
+    background: #fff; border: 1px solid #e2d9c6; border-radius: 12px;
+    margin-bottom: 16px; overflow: hidden;
+  }
+  .encabezado-bloque {
+    padding: 16px 18px; display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; gap: 10px;
+  }
+  .encabezado-bloque .nombre-bloque { font-size: 1.02rem; font-weight: bold; }
+  .encabezado-bloque .nombre-bloque span { display: block; font-weight: normal; font-size: 0.78rem; color: #6b6252; margin-top: 2px; }
+  .calif-circulo {
+    width: 54px; height: 54px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold; font-size: 1.1rem; color: #fff;
+  }
+  .flecha-desglose { color: #a89f8d; font-size: 1.1rem; transition: transform 0.2s ease; }
+  .tarjeta-bloque.abierta .flecha-desglose { transform: rotate(180deg); }
+
+  .desglose-bloque {
+    display: none; padding: 0 18px 18px; border-top: 1px solid #ece2cd;
+  }
+  .tarjeta-bloque.abierta .desglose-bloque { display: block; }
+  .fila-rubro {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 0; border-bottom: 1px solid #f2ece1; font-size: 0.92rem;
+  }
+  .fila-rubro:last-child { border-bottom: none; }
+  .fila-rubro .barra-fondo {
+    flex: 1; height: 6px; background: #ece2cd; border-radius: 4px; margin: 0 12px; overflow: hidden;
+  }
+  .fila-rubro .barra-relleno { height: 100%; background: #d99a3d; border-radius: 4px; }
+  .fila-rubro .valor-rubro { white-space: nowrap; color: #4a4030; font-size: 0.85rem; min-width: 62px; text-align: right; }
+  .fila-total {
+    display: flex; justify-content: space-between; font-weight: bold;
+    padding-top: 12px; margin-top: 6px; border-top: 1px solid #e2d9c6;
+  }
+
+  .vacio { text-align: center; color: #6b6252; padding: 40px 20px; }
+  .resumen-final {
+    background: #17140f; color: #f2ece1; border-radius: 12px; padding: 18px;
+    text-align: center; margin-top: 6px; margin-bottom: 18px;
+  }
+  .resumen-final .num { font-size: 1.8rem; font-weight: bold; color: #d99a3d; }
+  .resumen-final .txt { font-size: 0.82rem; color: #cfc6b6; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<div id="pantallaLogin">
+  <header><h1>Mi Progreso</h1></header>
+  <main>
+    <h2 style="margin-bottom:6px;">Consulta tu avance</h2>
+    <p class="texto-ayuda">Ingresa tu nombre completo y tu PIN para ver tu calificación por bloque.</p>
+    <label>Nombre completo</label>
+    <input id="inputNombreAlumno" type="text" placeholder="Nombre y apellido">
+    <label>PIN</label>
+    <input id="inputPinAlumno" type="text" inputmode="numeric" placeholder="4 dígitos" maxlength="4">
+    <button class="btn-principal" id="btnEntrarProgreso">Ver mi progreso</button>
+    <div id="mensajeErrorLogin" class="mensaje-error"></div>
+  </main>
+</div>
+
+<div id="pantallaProgreso" style="display:none;">
+  <header>
+    <a href="index.html">←</a>
+    <h1>Progreso — <span id="nombreAlumnoHeader"></span></h1>
+  </header>
+  <main>
+    <div id="contenidoProgreso"><div class="cargando">Cargando…</div></div>
+    <button class="btn-secundario" id="btnCerrarSesionProgreso">Salir</button>
+  </main>
+</div>
+
+<script>
+const CLAVE_SESION = 'jrg_progreso_sesion';
+let db = null, fx = {};
+
+const NOMBRES_BLOQUE = {
+  '1': 'Conceptos y definiciones de cocina',
+  '2': 'Conocimiento y manipulación de materias primas',
+  '3': 'Desarrollo de habilidades para la cocina',
+};
+
+const RUBROS = [
+  { clave: 'participacion', label: 'Participación', max: 20 },
+  { clave: 'ensayos', label: 'Ensayos', max: 30 },
+  { clave: 'practicas', label: 'Prácticas de cocina', max: 10 },
+  { clave: 'asistencia', label: 'Asistencia', max: 10 },
+  { clave: 'examen', label: 'Examen', max: 30 },
+];
+
+(async () => {
+  try {
+    const fbConfig = await import('./firebase-config.js');
+    const firestoreMod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+    db = fbConfig.db;
+    fx = firestoreMod;
+
+    const sesionGuardada = localStorage.getItem(CLAVE_SESION);
+    if (sesionGuardada) {
+      mostrarPantallaProgreso(JSON.parse(sesionGuardada));
+    }
+  } catch (err) {
+    document.getElementById('contenidoProgreso').innerHTML =
+      '<p class="texto-ayuda">No se pudo conectar: ' + err.message + '</p>';
+  }
+})();
+
+document.getElementById('btnEntrarProgreso').onclick = async () => {
+  const nombre = document.getElementById('inputNombreAlumno').value.trim();
+  const pin = document.getElementById('inputPinAlumno').value.trim();
+  const mensajeError = document.getElementById('mensajeErrorLogin');
+  mensajeError.style.display = 'none';
+
+  if (!nombre || !pin) {
+    mensajeError.textContent = 'Escribe tu nombre y tu PIN.';
+    mensajeError.style.display = 'block';
+    return;
+  }
+  if (!db) {
+    mensajeError.textContent = 'Aún no hay conexión, espera un momento e intenta de nuevo.';
+    mensajeError.style.display = 'block';
+    return;
+  }
+
+  try {
+    const q = fx.query(
+      fx.collectionGroup(db, 'alumnos'),
+      fx.where('nombre', '==', nombre),
+      fx.where('pin', '==', pin)
+    );
+    const snap = await fx.getDocs(q);
+    if (snap.empty) {
+      mensajeError.textContent = 'No encontramos ese nombre y PIN. Verifica con tu profesor.';
+      mensajeError.style.display = 'block';
+      return;
+    }
+    const docAlumno = snap.docs[0];
+    const segmentos = docAlumno.ref.path.split('/');
+    const materia = segmentos[1];
+    const grupo = segmentos[3];
+    const datosSesion = { alumnoId: docAlumno.id, nombre: docAlumno.data().nombre, materia, grupo };
+    localStorage.setItem(CLAVE_SESION, JSON.stringify(datosSesion));
+    mostrarPantallaProgreso(datosSesion);
+  } catch (err) {
+    mensajeError.textContent = 'Ocurrió un error al buscar tus datos: ' + err.message;
+    mensajeError.style.display = 'block';
+  }
+};
+
+document.getElementById('btnCerrarSesionProgreso').onclick = () => {
+  localStorage.removeItem(CLAVE_SESION);
+  document.getElementById('pantallaProgreso').style.display = 'none';
+  document.getElementById('pantallaLogin').style.display = 'block';
+};
+
+// --- Mismo cálculo automático que usa admin.html, para que el número coincida siempre ---
+async function calcularSubtotalesAutomaticos(materia, grupo, alumnoId, bloque) {
+  const snapPart = await fx.getDocs(fx.collection(db, 'materias', materia, 'grupos', grupo, 'alumnos', alumnoId, 'participacion'));
+  let participacion = 0;
+  snapPart.forEach((d) => { if (d.id.split('.')[0] === bloque) participacion += (d.data().puntos || 0); });
+
+  const snapPract = await fx.getDocs(fx.collection(db, 'materias', materia, 'grupos', grupo, 'alumnos', alumnoId, 'practicas'));
+  let practicas = 0;
+  snapPract.forEach((d) => { if (d.data().bloque === bloque) practicas += (d.data().puntos || 0); });
+  practicas = Math.min(practicas, 10);
+
+  const snapEns = await fx.getDocs(fx.collection(db, 'materias', materia, 'grupos', grupo, 'alumnos', alumnoId, 'ensayos'));
+  let ensayos = 0;
+  const inicio = (parseInt(bloque) - 1) * 5 + 1;
+  snapEns.forEach((d) => {
+    const num = parseInt(d.id.replace('semana', ''));
+    if (num >= inicio && num < inicio + 5) ensayos += (d.data().puntos || 0);
+  });
+  ensayos = Math.min(ensayos, 30);
+
+  const snapAsist = await fx.getDocs(fx.collection(db, 'materias', materia, 'grupos', grupo, 'alumnos', alumnoId, 'asistencia'));
+  let asistencia = 0;
+  snapAsist.forEach((d) => { if (d.data().bloque === bloque) asistencia += (d.data().valor || 0); });
+  asistencia = Math.min(asistencia, 10);
+
+  const snapExam = await fx.getDocs(fx.collection(db, 'materias', materia, 'grupos', grupo, 'alumnos', alumnoId, 'examenes'));
+  let examen = 0;
+  snapExam.forEach((d) => { if (d.id === 'bloque' + bloque) examen = (d.data().calificacion || 0) * 3; });
+
+  return { participacion: Math.min(participacion, 20), practicas, ensayos, asistencia, examen };
+}
+
+function colorParaCalificacion(calif) {
+  if (calif >= 8) return '#6a9955';
+  if (calif >= 6) return '#d99a3d';
+  return '#b04a3a';
+}
+
+async function mostrarPantallaProgreso(sesion) {
+  document.getElementById('pantallaLogin').style.display = 'none';
+  document.getElementById('pantallaProgreso').style.display = 'block';
+  document.getElementById('nombreAlumnoHeader').textContent = sesion.nombre;
+
+  const cont = document.getElementById('contenidoProgreso');
+  cont.innerHTML = '<div class="cargando">Cargando…</div>';
+
+  try {
+    const bloquesInfo = [];
+    for (const bloque of ['1', '2', '3']) {
+      const auto = await calcularSubtotalesAutomaticos(sesion.materia, sesion.grupo, sesion.alumnoId, bloque);
+
+      const refAjuste = fx.doc(db, 'materias', sesion.materia, 'grupos', sesion.grupo, 'alumnos', sesion.alumnoId, 'ajustesManuales', 'bloque' + bloque);
+      const snapAjuste = await fx.getDoc(refAjuste);
+      const ajustes = snapAjuste.exists() ? snapAjuste.data() : {};
+
+      const aplicar = (autoVal, manualVal) => (manualVal !== undefined && manualVal !== null) ? manualVal : autoVal;
+      const valores = {
+        participacion: aplicar(auto.participacion, ajustes.participacion),
+        ensayos: aplicar(auto.ensayos, ajustes.ensayos),
+        practicas: aplicar(auto.practicas, ajustes.practicas),
+        asistencia: aplicar(auto.asistencia, ajustes.asistencia),
+        examen: aplicar(auto.examen, ajustes.examen),
+      };
+      const total = Object.values(valores).reduce((a, b) => a + b, 0);
+      bloquesInfo.push({ bloque, valores, total, calificacion: total / 10 });
+    }
+
+    const promedioGeneral = bloquesInfo.reduce((acc, b) => acc + b.calificacion, 0) / bloquesInfo.length;
+
+    cont.innerHTML = `
+      <div class="resumen-final">
+        <div class="num">${promedioGeneral.toFixed(1)}</div>
+        <div class="txt">Promedio general de los 3 bloques</div>
+      </div>
+      ${bloquesInfo.map((b) => {
+        const color = colorParaCalificacion(b.calificacion);
+        return `
+        <div class="tarjeta-bloque" data-bloque="${b.bloque}">
+          <div class="encabezado-bloque">
+            <div class="nombre-bloque">Bloque ${b.bloque}<span>${NOMBRES_BLOQUE[b.bloque]}</span></div>
+            <div class="calif-circulo" style="background:${color};">${b.calificacion.toFixed(1)}</div>
+            <div class="flecha-desglose">▾</div>
+          </div>
+          <div class="desglose-bloque">
+            ${RUBROS.map((r) => {
+              const val = b.valores[r.clave];
+              const pct = Math.min(100, (val / r.max) * 100);
+              return `
+              <div class="fila-rubro">
+                <span>${r.label}</span>
+                <span class="barra-fondo"><span class="barra-relleno" style="width:${pct}%;"></span></span>
+                <span class="valor-rubro">${val.toFixed(1)} / ${r.max}</span>
+              </div>`;
+            }).join('')}
+            <div class="fila-total">
+              <span>Total del bloque</span>
+              <span>${b.total.toFixed(1)} / 100 (${b.calificacion.toFixed(1)})</span>
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
+    `;
+
+    document.querySelectorAll('.encabezado-bloque').forEach((enc) => {
+      enc.onclick = () => enc.closest('.tarjeta-bloque').classList.toggle('abierta');
+    });
+  } catch (err) {
+    cont.innerHTML = '<p class="texto-ayuda">No se pudo cargar tu progreso: ' + err.message + '</p>';
+  }
+}
+</script>
+<script src="menu.js"></script>
+<script src="musica.js"></script>
+</body>
+</html>
