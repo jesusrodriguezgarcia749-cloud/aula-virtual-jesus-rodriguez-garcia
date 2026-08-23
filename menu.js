@@ -81,7 +81,7 @@
   function ubicarBoton() {
     const header = headerVisible();
     const alturaHeader = header ? header.getBoundingClientRect().bottom : 60;
-    const top = Math.min(Math.round(alturaHeader - 10), 48);
+    const top = Math.min(Math.round(alturaHeader - 22), 36);
     btn.style.top = top + 'px';
   }
   ubicarBoton();
