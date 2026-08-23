@@ -108,6 +108,16 @@
   .aviso-item .fecha-aviso { color: #a89f8d; font-size: 0.78rem; display: block; margin-top: 2px; }
   .vacio-seccion { color: #a89f8d; font-size: 0.88rem; text-align: center; padding: 6px 0; }
 
+  .leyenda-asistencia { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.85rem; color: #4a4030; margin: 8px 0 12px; }
+  .leyenda-asistencia .punto-leyenda { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+  .grid-dias-asistencia { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .chip-dia-asistencia {
+    color: #fff; border-radius: 8px; padding: 8px 10px; text-align: center;
+    font-size: 0.8rem; min-width: 58px;
+  }
+  .chip-dia-asistencia .fecha-chip { font-weight: bold; }
+  .chip-dia-asistencia .valor-chip { font-size: 0.75rem; opacity: 0.9; }
+
   footer.pie-progreso { text-align: center; color: #a89f8d; font-size: 0.78rem; padding: 10px 0 40px; }
 </style>
 </head>
@@ -167,6 +177,9 @@ const RUBROS = [
 
 const ESTADOS_ASISTENCIA_LABEL = {
   presente: 'Presente', retardo: 'Retardo', justificado: 'Justificado', falta: 'Falta',
+};
+const ESTADOS_ASISTENCIA_COLOR = {
+  presente: '#6a9955', justificado: '#4a7ab0', retardo: '#d99a3d', falta: '#b04a3a',
 };
 
 (async () => {
@@ -447,13 +460,28 @@ async function mostrarPantallaProgreso(sesion) {
       if (info.asistenciaDias.length === 0) {
         htmlAsistencia += `<div class="fila-simple"><span>Sin registros</span><span class="valor">0.00 / 10 pts</span></div>`;
       } else {
-        htmlAsistencia += `<div class="fila-simple"><span>${info.asistenciaDias.length} día(s) registrados</span><span class="valor">${b.valores.asistencia.toFixed(2)} / 10 pts</span></div>`;
+        const asistenciasContadas = info.asistenciaDias.filter((d) => d.estado !== 'falta').length;
+        htmlAsistencia += `<div class="fila-simple"><span>${asistenciasContadas} asistencia(s)</span><span class="valor">${b.valores.asistencia.toFixed(2)} / 10 pts</span></div>`;
         const dias = info.asistenciaDias.slice().sort((x, y) => new Date(x.fecha) - new Date(y.fecha));
         htmlAsistencia += `<details class="desglose-detalle"><summary>Ver días registrados (${dias.length})</summary><div class="contenido-desglose">`;
+        htmlAsistencia += `
+          <div class="leyenda-asistencia">
+            <span><span class="punto-leyenda" style="background:${ESTADOS_ASISTENCIA_COLOR.presente};"></span>Presente</span>
+            <span><span class="punto-leyenda" style="background:${ESTADOS_ASISTENCIA_COLOR.justificado};"></span>Justificado</span>
+            <span><span class="punto-leyenda" style="background:${ESTADOS_ASISTENCIA_COLOR.retardo};"></span>Retardo</span>
+            <span><span class="punto-leyenda" style="background:${ESTADOS_ASISTENCIA_COLOR.falta};"></span>Falta</span>
+          </div>
+          <div class="grid-dias-asistencia">`;
         dias.forEach((d) => {
-          htmlAsistencia += `<div class="fila-rubro-mini"><span>${d.fecha}</span><span>${ESTADOS_ASISTENCIA_LABEL[d.estado] || d.estado}</span></div>`;
+          const fechaCorta = (d.fecha || '').split('-').slice(1).reverse().join('/'); // YYYY-MM-DD -> DD/MM
+          const color = ESTADOS_ASISTENCIA_COLOR[d.estado] || '#a89f8d';
+          htmlAsistencia += `
+            <div class="chip-dia-asistencia" style="background:${color};">
+              <div class="fecha-chip">${fechaCorta}</div>
+              <div class="valor-chip">${(d.valor || 0).toFixed(2)}</div>
+            </div>`;
         });
-        htmlAsistencia += `</div></details>`;
+        htmlAsistencia += `</div></div></details>`;
       }
     });
     htmlAsistencia += `</section>`;
