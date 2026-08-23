@@ -7,7 +7,7 @@
   const ENLACES = [
     { icono: '🏠', texto: 'Inicio', href: 'index.html' },
     { icono: '📖', texto: 'Compendio', href: `compendio.html?materia=${materiaActual}` },
-    { icono: '✅', texto: 'Actividades', href: 'actividades.html' },
+    { icono: '✅', texto: 'Actividades (Participación)', href: 'actividades.html' },
     { icono: '🗒️', texto: 'Ensayos', href: 'ensayos.html' },
     { icono: '📝', texto: 'Examen en Línea', href: 'examen.html' },
     { icono: '📊', texto: 'Mi Progreso', href: 'mi-progreso.html' },
