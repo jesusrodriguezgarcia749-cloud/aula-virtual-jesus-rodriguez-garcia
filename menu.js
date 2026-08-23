@@ -66,12 +66,20 @@
   btn.innerHTML = '☰';
   document.body.appendChild(btn);
 
-  // --- Posición dinámica según la altura real del encabezado de la página ---
-  // Se acerca más al encabezado (antes +12, ahora +4) y nunca baja de más de
-  // 100px desde arriba, para que en encabezados muy altos (paneles de 2-3
-  // líneas) el botón no quede "flotando" muy abajo en la pantalla.
+  // --- Posición dinámica según la altura real del encabezado VISIBLE ---
+  // Páginas con login (mi-progreso.html, ensayos.html) tienen dos <header>
+  // en el HTML: uno para la pantalla de login y otro para la de resultados.
+  // Hay que medir el que de verdad se ve, y volver a medir cada vez que la
+  // página cambia de pantalla (login → resultados), no solo al cargar.
+  function headerVisible() {
+    const headers = document.querySelectorAll('header');
+    for (const h of headers) {
+      if (h.offsetHeight > 0 && h.offsetParent !== null) return h;
+    }
+    return headers[0] || null;
+  }
   function ubicarBoton() {
-    const header = document.querySelector('header');
+    const header = headerVisible();
     const alturaHeader = header ? header.getBoundingClientRect().bottom : 60;
     const top = Math.min(Math.round(alturaHeader + 4), 64);
     btn.style.top = top + 'px';
@@ -79,6 +87,15 @@
   ubicarBoton();
   window.addEventListener('resize', ubicarBoton);
   window.addEventListener('load', ubicarBoton);
+
+  // Recalcula automáticamente si la página muestra/oculta pantallas
+  // (ej. login → panel de resultados), sin que cada archivo tenga que avisar.
+  let temporizadorReubicar = null;
+  const observador = new MutationObserver(() => {
+    clearTimeout(temporizadorReubicar);
+    temporizadorReubicar = setTimeout(ubicarBoton, 50);
+  });
+  observador.observe(document.body, { attributes: true, attributeFilter: ['style', 'class'], subtree: true });
 
   const overlay = document.createElement('div');
   overlay.id = 'jrgMenuOverlay';
