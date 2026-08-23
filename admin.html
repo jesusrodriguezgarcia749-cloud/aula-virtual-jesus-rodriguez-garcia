@@ -205,11 +205,15 @@ async function cargarGrupos() {
   const sel = document.getElementById('selectGrupo');
   const snap = await fx.getDocs(fx.collection(db, 'materias', materia, 'grupos'));
   sel.innerHTML = '';
-  if (snap.empty) {
+  const idsReales = snap.docs.map((d) => d.id);
+
+  // "1A" es el grupo original: nunca tuvo su propio documento (solo alumnos dentro
+  // de él), así que si no aparece como documento real, lo agregamos siempre a mano
+  // para no perderlo del selector.
+  if (!idsReales.includes('1A')) {
     const opt = document.createElement('option');
-    opt.value = '1A'; opt.textContent = '1A (crear alumnos para iniciar)';
+    opt.value = '1A'; opt.textContent = '1A';
     sel.appendChild(opt);
-    return;
   }
   snap.forEach((d) => {
     const opt = document.createElement('option');
@@ -222,7 +226,7 @@ document.getElementById('btnNuevoGrupo').onclick = async () => {
   if (!db) { mostrarEstadoTemporal('Aún no hay conexión, espera un momento e intenta de nuevo.'); return; }
   const nombre = prompt('Nombre del nuevo grupo (ej. 1B):');
   if (!nombre) return;
-  await fx.setDoc(fx.doc(db, 'materias', materia, 'grupos', nombre, 'meta', 'info'), { creado: new Date().toISOString() });
+  await fx.setDoc(fx.doc(db, 'materias', materia, 'grupos', nombre), { creado: new Date().toISOString() });
   await cargarGrupos();
   document.getElementById('selectGrupo').value = nombre;
   renderPestanaActual();
@@ -232,7 +236,7 @@ document.getElementById('btnBorrarGrupo').onclick = async () => {
   if (!db) { mostrarEstadoTemporal('Aún no hay conexión, espera un momento e intenta de nuevo.'); return; }
   const grupo = grupoSeleccionado();
   if (!confirm(`¿Seguro que quieres borrar el grupo "${grupo}"? Esto no borra los alumnos automáticamente, solo el registro del grupo.`)) return;
-  await fx.deleteDoc(fx.doc(db, 'materias', materia, 'grupos', grupo, 'meta', 'info'));
+  await fx.deleteDoc(fx.doc(db, 'materias', materia, 'grupos', grupo));
   await cargarGrupos();
   renderPestanaActual();
 };
@@ -386,10 +390,10 @@ function renderParticipacionTab(cont) {
 }
 // --- Pestaña: Asistencia ---
 const ESTADOS_ASISTENCIA = [
-  { clave: 'presente', label: 'PRESENTE', valor: 0.5 },
-  { clave: 'retardo', label: 'RETARDO', valor: 0.25 },
-  { clave: 'justificado', label: 'JUSTIFICADO', valor: 0.5 },
-  { clave: 'falta', label: 'FALTA', valor: 0 },
+  { clave: 'presente', label: 'PRESENTE', valor: 0.5, color: '#6a9955' },
+  { clave: 'retardo', label: 'RETARDO', valor: 0.25, color: '#d99a3d' },
+  { clave: 'justificado', label: 'JUSTIFICADO', valor: 0.5, color: '#4a7ab0' },
+  { clave: 'falta', label: 'FALTA', valor: 0, color: '#b04a3a' },
 ];
 const NOMBRES_BLOQUE_SEMANAS = { '1': 'Bloque 1 (semanas 1-5)', '2': 'Bloque 2 (semanas 6-10)', '3': 'Bloque 3 (semanas 11-15)' };
 
@@ -425,12 +429,16 @@ function renderAsistenciaTab(cont) {
       div.className = 'fila-asistencia';
       div.dataset.alumnoId = docAlumno.id;
       div.dataset.estado = estado;
-      div.innerHTML = `<span>${docAlumno.data().nombre}</span><span class="estado-asistencia">${ESTADOS_ASISTENCIA.find(e => e.clave === estado).label}</span>`;
+      const infoEstado = ESTADOS_ASISTENCIA.find(e => e.clave === estado);
+      div.innerHTML = `<span class="punto" style="background:${infoEstado.color};"></span><span>${docAlumno.data().nombre}</span><span class="estado-asistencia" style="margin-left:auto; color:${infoEstado.color}; font-weight:bold;">${infoEstado.label}</span>`;
       div.onclick = () => {
         const idx = ESTADOS_ASISTENCIA.findIndex(e => e.clave === div.dataset.estado);
         const sig = ESTADOS_ASISTENCIA[(idx + 1) % ESTADOS_ASISTENCIA.length];
         div.dataset.estado = sig.clave;
-        div.querySelector('.estado-asistencia').textContent = sig.label;
+        div.querySelector('.punto').style.background = sig.color;
+        const spanEstado = div.querySelector('.estado-asistencia');
+        spanEstado.textContent = sig.label;
+        spanEstado.style.color = sig.color;
       };
       contLista.appendChild(div);
     }
@@ -752,39 +760,141 @@ const ESCUDO_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAKAAAACgCAYAAACLz2ctAACydUlEQVR42
 // --- Pestaña: Historial ---
 function renderHistorialTab(cont) {
   cont.innerHTML = `
-    <p class="texto-ayuda">Registro cronológico de toda la actividad del grupo.</p>
-    <button class="btn-principal" id="btnExportarPDF">Descargar reporte PDF</button>
-    <button class="btn-secundario" id="btnExportarCSV">Descargar Excel (CSV)</button>
-    <div id="listaHistorial" style="margin-top:20px;"></div>
+    <h3>Generar reporte</h3>
+    <label>¿De quién?</label>
+    <select id="selectAlumnoReporte"><option value="todos">Todo el grupo</option></select>
+    <label>Bloques a incluir</label>
+    <div id="listaBloquesReporte"></div>
+    <div style="display:flex; gap:10px; margin-top:14px;">
+      <button class="btn-principal" id="btnExportarPDF" style="margin-top:0;">Reporte PDF</button>
+      <button class="btn-secundario" id="btnExportarCSV" style="margin-top:0;">Excel (CSV)</button>
+    </div>
+
+    <h3 style="margin-top:28px;">Resumen por alumno</h3>
+    <p class="texto-ayuda">Toca un alumno para ver su resumen completo del cuatrimestre.</p>
+    <div id="listaAlumnosResumen"></div>
+    <div id="panelResumenAlumno" style="margin-top:16px;"></div>
   `;
 
-  async function cargar() {
-    const grupo = grupoSeleccionado();
-    const snapAlumnos = await fx.getDocs(fx.collection(db, 'materias', materia, 'grupos', grupo, 'alumnos'));
-    const eventos = [];
-    for (const docAlumno of snapAlumnos.docs) {
-      const nombre = docAlumno.data().nombre;
-      const alumnoId = docAlumno.id;
-      const snapPart = await fx.getDocs(fx.collection(db, 'materias', materia, 'grupos', grupo, 'alumnos', alumnoId, 'participacion'));
-      snapPart.forEach((d) => eventos.push({ fecha: d.data().fecha, tipo: 'Participación', detalle: `${nombre} — subtema ${d.id} (+${(d.data().puntos||0).toFixed(1)} pts)` }));
-      const snapPract = await fx.getDocs(fx.collection(db, 'materias', materia, 'grupos', grupo, 'alumnos', alumnoId, 'practicas'));
-      snapPract.forEach((d) => eventos.push({ fecha: d.data().fechaRegistro, tipo: 'Práctica', detalle: `${nombre} — Bloque ${d.data().bloque} (${(d.data().calificacion||0).toFixed(1)}/10)` }));
-      const snapEns = await fx.getDocs(fx.collection(db, 'materias', materia, 'grupos', grupo, 'alumnos', alumnoId, 'ensayos'));
-      snapEns.forEach((d) => eventos.push({ fecha: d.data().fecha, tipo: 'Ensayo', detalle: `${nombre} — ${d.id} (${d.data().puntos} pts)` }));
-      const snapExam = await fx.getDocs(fx.collection(db, 'materias', materia, 'grupos', grupo, 'alumnos', alumnoId, 'examenes'));
-      snapExam.forEach((d) => eventos.push({ fecha: d.data().fecha, tipo: 'Examen', detalle: `${nombre} — ${d.id} (${d.data().calificacion}/10)` }));
-    }
-    eventos.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-    const contLista = document.getElementById('listaHistorial');
-    contLista.innerHTML = eventos.length === 0
-      ? '<p class="texto-ayuda">Aún no hay actividad registrada en este grupo.</p>'
-      : eventos.map(e => `<div class="fila-historial"><span class="tag-tipo">${e.tipo}</span><span>${e.detalle}</span><span class="fecha-historial">${new Date(e.fecha).toLocaleString('es-MX',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</span></div>`).join('');
+  function cargarBloquesToggle() {
+    const cont2 = document.getElementById('listaBloquesReporte');
+    cont2.innerHTML = '';
+    ['1', '2', '3'].forEach((b) => {
+      const div = document.createElement('div');
+      div.className = 'fila-examen-control';
+      div.dataset.bloque = b;
+      div.dataset.incluido = '1';
+      div.innerHTML = `<span class="punto verde"></span><span>Bloque ${b}</span><span class="estado-examen" style="color:#6a9955;">INCLUIDO</span>`;
+      div.onclick = () => {
+        const nuevo = div.dataset.incluido !== '1';
+        div.dataset.incluido = nuevo ? '1' : '0';
+        div.querySelector('.punto').className = 'punto ' + (nuevo ? 'verde' : 'rojo');
+        const span = div.querySelector('.estado-examen');
+        span.textContent = nuevo ? 'INCLUIDO' : 'EXCLUIDO';
+        span.style.color = nuevo ? '#6a9955' : '#b04a3a';
+      };
+      cont2.appendChild(div);
+    });
   }
 
-  document.getElementById('btnExportarPDF').onclick = () => exportarReporte('pdf');
-  document.getElementById('btnExportarCSV').onclick = () => exportarReporte('csv');
+  async function cargarListas() {
+    const grupo = grupoSeleccionado();
+    const snap = await fx.getDocs(fx.collection(db, 'materias', materia, 'grupos', grupo, 'alumnos'));
 
-  cargar();
+    const sel = document.getElementById('selectAlumnoReporte');
+    sel.innerHTML = '<option value="todos">Todo el grupo</option>';
+    snap.forEach((d) => {
+      const opt = document.createElement('option'); opt.value = d.id; opt.textContent = d.data().nombre;
+      sel.appendChild(opt);
+    });
+
+    const contLista = document.getElementById('listaAlumnosResumen');
+    contLista.innerHTML = '';
+    snap.forEach((docu) => {
+      const div = document.createElement('div');
+      div.className = 'fila-alumno';
+      div.innerHTML = `<span>${docu.data().nombre}</span><button class="btn-mini">Ver resumen →</button>`;
+      div.querySelector('button').onclick = () => mostrarResumenAlumno(docu.id, docu.data().nombre);
+      contLista.appendChild(div);
+    });
+  }
+
+  async function mostrarResumenAlumno(alumnoId, nombre) {
+    const grupo = grupoSeleccionado();
+    const panel = document.getElementById('panelResumenAlumno');
+    panel.innerHTML = '<p class="texto-ayuda">Cargando…</p>';
+
+    const [snapPart, snapPract, snapEns, snapAsist, snapExam] = await Promise.all([
+      fx.getDocs(fx.collection(db, 'materias', materia, 'grupos', grupo, 'alumnos', alumnoId, 'participacion')),
+      fx.getDocs(fx.collection(db, 'materias', materia, 'grupos', grupo, 'alumnos', alumnoId, 'practicas')),
+      fx.getDocs(fx.collection(db, 'materias', materia, 'grupos', grupo, 'alumnos', alumnoId, 'ensayos')),
+      fx.getDocs(fx.collection(db, 'materias', materia, 'grupos', grupo, 'alumnos', alumnoId, 'asistencia')),
+      fx.getDocs(fx.collection(db, 'materias', materia, 'grupos', grupo, 'alumnos', alumnoId, 'examenes')),
+    ]);
+
+    const bloquesResumen = [];
+    for (const b of ['1', '2', '3']) {
+      const auto = await calcularSubtotalesAutomaticos(alumnoId, b);
+      const refAjuste = fx.doc(db, 'materias', materia, 'grupos', grupo, 'alumnos', alumnoId, 'ajustesManuales', 'bloque' + b);
+      const snapAj = await fx.getDoc(refAjuste);
+      const aj = snapAj.exists() ? snapAj.data() : {};
+      const aplicar = (a, m) => (m !== undefined && m !== null) ? m : a;
+      const valores = {
+        participacion: aplicar(auto.participacion, aj.participacion),
+        ensayos: aplicar(auto.ensayos, aj.ensayos),
+        practicas: aplicar(auto.practicas, aj.practicas),
+        asistencia: aplicar(auto.asistencia, aj.asistencia),
+        examen: aplicar(auto.examen, aj.examen),
+      };
+      const total = Object.values(valores).reduce((x, y) => x + y, 0);
+
+      const countPart = snapPart.docs.filter((d) => d.id.split('.')[0] === b).length;
+      const countEns = snapEns.docs.filter((d) => {
+        const dat = d.data();
+        return String(dat.bloque || Math.ceil(dat.semana / 5)) === b && dat.entregada;
+      }).length;
+      const countPract = snapPract.docs.filter((d) => d.data().bloque === b).length;
+      const diasAsist = snapAsist.docs.filter((d) => d.data().bloque === b);
+      const faltas = diasAsist.filter((d) => d.data().estado === 'falta').length;
+      const examenDoc = snapExam.docs.find((d) => d.id === 'bloque' + b);
+      const examenInfo = examenDoc ? examenDoc.data() : null;
+
+      bloquesResumen.push({ bloque: b, valores, total, countPart, countEns, countPract, diasAsist: diasAsist.length, faltas, examenInfo });
+    }
+
+    const promedio = bloquesResumen.reduce((a, b) => a + b.total, 0) / 300 * 10;
+
+    panel.innerHTML = `
+      <h3 style="margin-top:0;">Resumen de: ${nombre}</h3>
+      ${bloquesResumen.map((b) => `
+        <div class="tarjeta-criterio">
+          <h4 style="color:#b5772a; margin-bottom:8px;">Bloque ${b.bloque}</h4>
+          <div class="fila-simple"><span>Participación <span class="texto-ayuda">(${b.countPart} registros)</span></span><span>${b.valores.participacion.toFixed(1)} / 20</span></div>
+          <div class="fila-simple"><span>Ensayos <span class="texto-ayuda">(${b.countEns}/5 bitácoras)</span></span><span>${b.valores.ensayos.toFixed(1)} / 30</span></div>
+          <div class="fila-simple"><span>Prácticas de cocina <span class="texto-ayuda">(${b.countPract} registradas)</span></span><span>${b.valores.practicas.toFixed(1)} / 10</span></div>
+          <div class="fila-simple"><span>Asistencia <span class="texto-ayuda">(${b.diasAsist} días · ${b.faltas} faltas)</span></span><span>${b.valores.asistencia.toFixed(1)} / 10</span></div>
+          <div class="fila-simple"><span>Examen <span class="texto-ayuda">(${b.examenInfo ? b.examenInfo.aciertos + '/' + b.examenInfo.total + ' · en línea' : 'sin presentar'})</span></span><span>${b.valores.examen.toFixed(1)} / 30</span></div>
+          <div class="fila-total" style="margin-top:8px;"><span>Total Bloque ${b.bloque}</span><span>${b.total.toFixed(1)} / 100 pts</span></div>
+        </div>
+      `).join('')}
+      <div class="franja-calificacion">Promedio: ${promedio.toFixed(1)} / 10</div>
+      <p class="texto-ayuda">Promedio de los tres bloques (cada uno vale 100 puntos).</p>
+    `;
+  }
+
+  document.getElementById('btnExportarPDF').onclick = () => {
+    const alumno = document.getElementById('selectAlumnoReporte').value;
+    const bloquesIncl = [...document.querySelectorAll('#listaBloquesReporte .fila-examen-control')].filter((f) => f.dataset.incluido === '1').map((f) => f.dataset.bloque);
+    exportarReporte('pdf', alumno, bloquesIncl);
+  };
+  document.getElementById('btnExportarCSV').onclick = () => {
+    const alumno = document.getElementById('selectAlumnoReporte').value;
+    const bloquesIncl = [...document.querySelectorAll('#listaBloquesReporte .fila-examen-control')].filter((f) => f.dataset.incluido === '1').map((f) => f.dataset.bloque);
+    exportarReporte('csv', alumno, bloquesIncl);
+  };
+
+  cargarBloquesToggle();
+  cargarListas();
 }
 
 // --- Cálculo consolidado por alumno/bloque, usado por el reporte ---
@@ -1086,14 +1196,19 @@ const COLOR_MARINO = '#252734';
 // -> se inserta la constante ESCUDO_BASE64 al integrar el archivo final
 
 
-async function exportarReporte(formato) {
+async function exportarReporte(formato, alumnoFiltro, bloquesFiltro) {
   const grupo = grupoSeleccionado();
-  const snapAlumnos = await fx.getDocs(fx.collection(db, 'materias', materia, 'grupos', grupo, 'alumnos'));
+  const bloquesAIncluir = (bloquesFiltro && bloquesFiltro.length > 0) ? bloquesFiltro : ['1', '2', '3'];
+  let snapAlumnos = await fx.getDocs(fx.collection(db, 'materias', materia, 'grupos', grupo, 'alumnos'));
+  let docsAlumnos = snapAlumnos.docs;
+  if (alumnoFiltro && alumnoFiltro !== 'todos') {
+    docsAlumnos = docsAlumnos.filter((d) => d.id === alumnoFiltro);
+  }
   const nombresBloque = { '1': 'Conceptos y definiciones de cocina', '2': 'Conocimiento y manipulación de materias primas', '3': 'Desarrollo de habilidades para la cocina' };
   const bloques = [];
-  for (const b of ['1','2','3']) {
+  for (const b of bloquesAIncluir) {
     const alumnosDatos = [];
-    for (const docAlumno of snapAlumnos.docs) {
+    for (const docAlumno of docsAlumnos) {
       const auto = await calcularSubtotalesAutomaticos(docAlumno.id, b);
       const refAjuste = fx.doc(db, 'materias', materia, 'grupos', grupo, 'alumnos', docAlumno.id, 'ajustesManuales', 'bloque'+b);
       const snapAjuste = await fx.getDoc(refAjuste);
