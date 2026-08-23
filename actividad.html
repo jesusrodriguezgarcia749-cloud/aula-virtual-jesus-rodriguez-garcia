@@ -327,7 +327,7 @@ const BANCO = {
       { tipo: 'multiple', texto: '¿Qué proporción y tiempo requiere el arroz integral frente al blanco?', opciones: ['Igual proporción y tiempo que el blanco', '1 parte de arroz por 2.5 de líquido, con 35 a 40 minutos por la resistencia del salvado', 'Menos líquido y menos tiempo que el blanco', 'No se puede cocer arroz integral en casa'], correcta: 1, explicacion: 'El salvado del arroz integral requiere más líquido y tiempo de cocción.' },
       { tipo: 'completar', texto: 'El cuscús se cocina con una proporción de 1 parte de grano por ___ de líquido, en solo 5 minutos de reposo.', respuesta: '1', explicacion: 'El cuscús usa proporción 1:1 y se hidrata solo con reposo.' },
       { tipo: 'vf', texto: 'El remojo previo de las leguminosas secas hidrata parcialmente la semilla, reduce su tiempo de cocción y ayuda a disolver compuestos asociados a la flatulencia.', correcta: true, explicacion: 'Correcto, el remojo tiene esos tres beneficios prácticos.' },
-      { tipo: 'multiple', texto: '¿Qué leguminosa de uso común es una excepción frecuente, ya que puede cocinarse sin remojo previo?', opciones: ['El frijol', 'La lenteja, por su tamaño pequeño y cáscara delgada', 'El garbanzo', 'La haba'], correcta: 1, explicacion: 'La lenteja no necesita remojo previo gracias a su tamaño y cáscara delgada.' },
+      { tipo: 'multiple', texto: '¿Qué leguminosa de uso común es una excepción frecuente, ya que puede cocinarse sin remojo previo?', opciones: ['El frijol', 'La lenteja, por su tamaño pequeño y cáscara delgada', 'El garbanzo', 'El haba'], correcta: 1, explicacion: 'La lenteja no necesita remojo previo gracias a su tamaño y cáscara delgada.' },
       { tipo: 'multiple', texto: '¿Cómo se verifica correctamente el punto de cocción de un grano o leguminosa en la cocina profesional?', opciones: ['Solo por el tiempo transcurrido', 'Mordiendo directamente un grano para comprobar que esté suave por completo, sin núcleo duro y crudo', 'Por el color del agua', 'Nunca se verifica, se confía en la receta'], correcta: 1, explicacion: 'La prueba de mordida es el método más confiable de verificación.' },
       { tipo: 'multiple', texto: '¿Cuáles son los pasos clave para obtener un arroz blanco suelto y separado?', opciones: ['Solo hervirlo sin más pasos', 'Enjuagar en agua fría, sofreír brevemente en grasa (nacarizar), añadir líquido 1:2 tapado sin remover, y reposar 5 minutos', 'Cocerlo destapado revolviendo constantemente', 'No enjuagarlo nunca'], correcta: 1, explicacion: 'Estos pasos aseguran un arroz bien suelto y sin exceso de almidón liberado.' },
       { tipo: 'vf', texto: 'La quinoa y la avena en hojuelas usan una proporción de 1 parte de grano por 2 de líquido, aunque sus tiempos de cocción son distintos.', correcta: true, explicacion: 'Correcto, la proporción es igual pero la quinoa tarda 15 min y la avena de 5 a 8 min.' }
@@ -346,8 +346,6 @@ const BANCO = {
     ]
   }
 };
-
-
 
 const TEMAS = {
   '1.1': ['👨‍🍳','🎩','🍽️','📋'],
@@ -671,6 +669,6 @@ if (data) {
   document.getElementById('preguntaTexto').textContent = 'Este subtema todavía no tiene preguntas cargadas.';
 }
 </script>
-<script src="menu.js"></script>
+<script src="menu.js?v=4"></script>
 </body>
 </html>
