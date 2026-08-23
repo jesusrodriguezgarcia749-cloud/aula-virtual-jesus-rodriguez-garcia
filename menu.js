@@ -66,10 +66,14 @@
   document.body.appendChild(btn);
 
   // --- Posición dinámica según la altura real del encabezado de la página ---
+  // Se acerca más al encabezado (antes +12, ahora +4) y nunca baja de más de
+  // 100px desde arriba, para que en encabezados muy altos (paneles de 2-3
+  // líneas) el botón no quede "flotando" muy abajo en la pantalla.
   function ubicarBoton() {
     const header = document.querySelector('header');
     const alturaHeader = header ? header.getBoundingClientRect().bottom : 60;
-    btn.style.top = Math.round(alturaHeader + 12) + 'px';
+    const top = Math.min(Math.round(alturaHeader + 4), 100);
+    btn.style.top = top + 'px';
   }
   ubicarBoton();
   window.addEventListener('resize', ubicarBoton);
