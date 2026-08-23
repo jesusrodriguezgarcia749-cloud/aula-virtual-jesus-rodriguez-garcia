@@ -125,7 +125,7 @@
     <div class="pestana activa" data-tab="alumnos">Alumnos</div>
     <div class="pestana" data-tab="practicas">Práctica de cocina</div>
     <div class="pestana" data-tab="historial">Historial</div>
-    <div class="pestana" data-tab="participacion">Participación</div>
+    <div class="pestana" data-tab="participacion">Participación (Actividades)</div>
     <div class="pestana" data-tab="asistencia">Asistencia</div>
     <div class="pestana" data-tab="ensayos">Ensayos</div>
     <div class="pestana" data-tab="evaluacion">Evaluación</div>
@@ -925,7 +925,7 @@ function renderHistorialTab(cont) {
       ${bloquesResumen.map((b) => `
         <div class="tarjeta-criterio">
           <h4 style="color:#b5772a; margin-bottom:8px;">Bloque ${b.bloque}</h4>
-          <div class="fila-simple"><span>Participación <span class="texto-ayuda">(${b.countPart} registros)</span></span><span>${b.valores.participacion.toFixed(1)} / 20</span></div>
+          <div class="fila-simple"><span>Participación (Actividades) <span class="texto-ayuda">(${b.countPart} registros)</span></span><span>${b.valores.participacion.toFixed(1)} / 20</span></div>
           <div class="fila-simple"><span>Ensayos <span class="texto-ayuda">(${b.countEns}/5 bitácoras)</span></span><span>${b.valores.ensayos.toFixed(1)} / 30</span></div>
           <div class="fila-simple"><span>Prácticas de cocina <span class="texto-ayuda">(${b.countPract} registradas)</span></span><span>${b.valores.practicas.toFixed(1)} / 10</span></div>
           <div class="fila-simple"><span>Asistencia <span class="texto-ayuda">(${b.diasAsist} días · ${b.faltas} faltas)</span></span><span>${b.valores.asistencia.toFixed(1)} / 10</span></div>
