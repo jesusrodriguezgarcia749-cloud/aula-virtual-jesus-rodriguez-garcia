@@ -371,7 +371,7 @@ async function mostrarPantallaProgreso(sesion) {
     // ===================== ARMAR HTML =====================
 
     // --- Participación ---
-    let htmlParticipacion = `<section class="tarjeta"><h2>Participación <small>20 pts por bloque</small></h2>`;
+    let htmlParticipacion = `<section class="tarjeta"><h2>Participación (Actividades) <small>20 pts por bloque</small></h2>`;
     resumenBloques.forEach((b) => {
       htmlParticipacion += `<div class="fila-simple"><span>Bloque ${b.bloque}</span><span class="valor">${b.valores.participacion.toFixed(1)} / 20 pts</span></div>`;
     });
