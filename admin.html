@@ -111,7 +111,7 @@
 <header>
   <a href="index.html">←</a>
   <h1>Panel docente</h1>
-  <button class="btn-mini" id="btnSalirPanel" style="margin-left:auto;">Salir</button>
+  <button class="btn-mini" id="btnSalirPanel" style="margin-left:auto; margin-right:56px; font-size:0.82rem; padding:10px 14px;">Salir</button>
 </header>
 
 <main>
@@ -725,6 +725,7 @@ function renderPracticasTab(cont) {
       <h3>Calificando a: ${alumnoNombre}</h3>
       <label>Bloque</label>
       <select id="selectBloquePractica"><option value="1">Bloque 1 (semanas 1-5)</option><option value="2">Bloque 2 (semanas 6-10)</option><option value="3">Bloque 3 (semanas 11-15)</option></select>
+      <div id="avisoBloqueCalificado" class="texto-ayuda" style="display:none; color:#b04a3a; background:#f7e6e2; border-radius:8px; padding:10px 12px;"></div>
       <label>Fecha de la práctica</label>
       <input type="date" id="inputFechaPractica" value="${hoyISO()}">
       <h3>Rúbrica de competencias</h3>
@@ -768,6 +769,29 @@ function renderPracticasTab(cont) {
     }
     actualizarCalificacion();
 
+    // --- Evita calificar dos veces el mismo bloque por error ---
+    async function revisarSiYaCalificado() {
+      const grupo = grupoSeleccionado();
+      const bloque = document.getElementById('selectBloquePractica').value;
+      const snapExistentes = await fx.getDocs(fx.collection(db, 'materias', materia, 'grupos', grupo, 'alumnos', alumnoId, 'practicas'));
+      const existente = snapExistentes.docs.find((d) => d.data().bloque === bloque);
+      const aviso = document.getElementById('avisoBloqueCalificado');
+      const btnGuardar = document.getElementById('btnGuardarEvaluacion');
+      if (existente) {
+        const dat = existente.data();
+        aviso.style.display = 'block';
+        aviso.textContent = `Este bloque ya tiene una práctica calificada (${dat.fecha}, ${(dat.calificacion||0).toFixed(1)}/10). Para corregirla, usa la pestaña Evaluación.`;
+        btnGuardar.disabled = true;
+        btnGuardar.style.opacity = '0.5';
+      } else {
+        aviso.style.display = 'none';
+        btnGuardar.disabled = false;
+        btnGuardar.style.opacity = '1';
+      }
+    }
+    document.getElementById('selectBloquePractica').onchange = revisarSiYaCalificado;
+    revisarSiYaCalificado();
+
     document.getElementById('btnGuardarEvaluacion').onclick = async () => {
       const valores = {};
       document.querySelectorAll('.slider-criterio').forEach((s) => { valores[s.dataset.clave] = parseFloat(s.value); });
@@ -782,6 +806,7 @@ function renderPracticasTab(cont) {
         bloque, fecha, valores, calificacion, puntos: calificacion, checklist, notas, fechaRegistro: new Date().toISOString(),
       });
       mostrarEstadoTemporal('Evaluación guardada.');
+      revisarSiYaCalificado();
     };
   }
 
