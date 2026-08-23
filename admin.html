@@ -39,9 +39,13 @@
 
   .texto-ayuda { color: #6b6252; font-size: 0.85rem; line-height: 1.5; margin: 6px 0 14px; }
   #estadoTemporal {
-    display: none; margin-top: 14px; padding: 12px 14px; border-radius: 10px;
-    background: #ece2cd; color: #4a4030; font-size: 0.9rem;
+    display: none; position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+    padding: 12px 20px; border-radius: 30px; z-index: 1000;
+    background: #17140f; color: #f2ece1; font-size: 0.9rem; font-weight: bold;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25); opacity: 0; transition: opacity 0.25s ease;
+    max-width: 88%; text-align: center;
   }
+  #estadoTemporal.visible { opacity: 1; }
 
   /* Filas genéricas de listas */
   .fila-alumno, .fila-bloque, .fila-avance, .fila-asistencia, .fila-ensayo,
@@ -193,9 +197,14 @@ function grupoSeleccionado() { return document.getElementById('selectGrupo').val
 
 function mostrarEstadoTemporal(msg) {
   const el = document.getElementById('estadoTemporal');
-  el.textContent = msg;
+  el.textContent = '✓ ' + msg;
   el.style.display = 'block';
-  setTimeout(() => { el.style.display = 'none'; }, 3500);
+  requestAnimationFrame(() => el.classList.add('visible'));
+  clearTimeout(el._temporizador);
+  el._temporizador = setTimeout(() => {
+    el.classList.remove('visible');
+    setTimeout(() => { el.style.display = 'none'; }, 250);
+  }, 2200);
 }
 
 function hoyISO() { return new Date().toISOString().split('T')[0]; }
@@ -208,18 +217,28 @@ async function cargarGrupos() {
   const idsReales = snap.docs.map((d) => d.id);
 
   // "1A" es el grupo original: nunca tuvo su propio documento (solo alumnos dentro
-  // de él), así que si no aparece como documento real, lo agregamos siempre a mano
-  // para no perderlo del selector.
+  // de él). Si no aparece como documento real, lo agregamos a mano SOLO si de
+  // verdad todavía tiene alumnos — así si lo borras y mueves/quitas sus alumnos,
+  // sí desaparece del selector para siempre.
   if (!idsReales.includes('1A')) {
-    const opt = document.createElement('option');
-    opt.value = '1A'; opt.textContent = '1A';
-    sel.appendChild(opt);
+    const snapAlumnos1A = await fx.getDocs(fx.collection(db, 'materias', materia, 'grupos', '1A', 'alumnos'));
+    if (!snapAlumnos1A.empty) {
+      const opt = document.createElement('option');
+      opt.value = '1A'; opt.textContent = '1A';
+      sel.appendChild(opt);
+    }
   }
   snap.forEach((d) => {
     const opt = document.createElement('option');
     opt.value = d.id; opt.textContent = d.id;
     sel.appendChild(opt);
   });
+
+  if (sel.options.length === 0) {
+    const opt = document.createElement('option');
+    opt.value = '1A'; opt.textContent = '1A (crear alumnos para iniciar)';
+    sel.appendChild(opt);
+  }
 }
 
 document.getElementById('btnNuevoGrupo').onclick = async () => {
@@ -588,7 +607,11 @@ function renderEnsayosTab(cont) {
       </div>
     `;
 
-    document.getElementById('btnGuardarConsigna').onclick = async () => {
+    document.getElementById('btnGuardarConsigna').onclick = async (ev) => {
+      const btn = ev.currentTarget;
+      const textoOriginal = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Guardando…';
       const activaNueva = document.getElementById('checkActivaSemana').checked;
       await fx.setDoc(refConsigna, {
         ['semana' + semGlobal]: {
@@ -598,6 +621,8 @@ function renderEnsayosTab(cont) {
         }
       }, { merge: true });
       mostrarEstadoTemporal(activaNueva ? 'Semana activada para los alumnos.' : 'Semana desactivada.');
+      btn.disabled = false;
+      btn.textContent = textoOriginal;
     };
   }
 
@@ -624,7 +649,11 @@ function renderEnsayosTab(cont) {
     }
   }
 
-  document.getElementById('btnGuardarEnsayos').onclick = async () => {
+  document.getElementById('btnGuardarEnsayos').onclick = async (ev) => {
+    const btn = ev.currentTarget;
+    const textoOriginal = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Guardando…';
     const [bloque, indiceLocal] = sel.value.split('|');
     const semGlobal = numeroSemanaGlobal(bloque, parseInt(indiceLocal));
     const grupo = grupoSeleccionado();
@@ -636,6 +665,8 @@ function renderEnsayosTab(cont) {
       await fx.setDoc(fx.doc(db, 'materias', materia, 'grupos', grupo, 'alumnos', fila.dataset.alumnoId, 'ensayos', 'semana' + semGlobal), { entregada, puntos, bloque, semana: semGlobal, fecha: new Date().toISOString() });
     }
     mostrarEstadoTemporal('Ensayos de la semana ' + semGlobal + ' guardados.');
+    btn.disabled = false;
+    btn.textContent = textoOriginal;
   };
 
   sel.onchange = () => { cargarConsigna(); cargar(); };
