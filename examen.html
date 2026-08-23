@@ -632,6 +632,21 @@ async function intentarReanudar(bloqueId) {
   return false;
 }
 
+// --- Revisar si el bloque está abierto para presentar examen ---
+async function bloqueDeExamenAbierto(bloqueId) {
+  if (!alumno || !dbRef) return true; // sin sesión/conexión: no bloquear localmente, se resolverá al guardar
+  try {
+    const firestoreMod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+    const refConfig = firestoreMod.doc(dbRef, 'materias', materia, 'grupos', alumno.grupo, 'config', 'examenesAbiertos');
+    const snap = await firestoreMod.getDoc(refConfig);
+    const config = snap.exists() ? snap.data() : {};
+    return config['bloque' + bloqueId] === true;
+  } catch (err) {
+    console.warn('No se pudo verificar si el examen está abierto:', err);
+    return true;
+  }
+}
+
 // --- Iniciar examen ---
 document.getElementById('btnComenzar').onclick = async () => {
   if (!alumno) {
@@ -639,15 +654,22 @@ document.getElementById('btnComenzar').onclick = async () => {
     return;
   }
   bloqueActual = document.getElementById('selectBloque').value;
+  estadoInicio.textContent = 'Verificando…';
 
   const reanudado = await intentarReanudar(bloqueActual);
   if (!reanudado) {
+    const abierto = await bloqueDeExamenAbierto(bloqueActual);
+    if (!abierto) {
+      estadoInicio.textContent = 'El examen de este bloque aún no está abierto. Espera a que tu docente lo active.';
+      return;
+    }
     preguntasExamen = prepararPreguntas(bloqueActual);
     respuestas = new Array(preguntasExamen.length).fill(undefined);
     indiceActual = 0;
     segundosRestantes = DURACION_MIN * 60;
   }
 
+  estadoInicio.textContent = '';
   examenActivo = true;
   examenEntregado = false;
 
