@@ -409,8 +409,8 @@ async function mostrarPantallaProgreso(sesion) {
     });
     htmlEnsayos += `
       <div class="caja-acumulado">
-        <span>Acumulado del cuatrimestre</span>
-        <span class="num">${ensayosAcumulado.toFixed(1)} / 90 pts</span>
+        <span>Tu porcentaje hacia la Evaluación Final</span>
+        <span class="num">${pctEvaluacionFinal.toFixed(1)}% / 35%</span>
       </div>
     </section>`;
 
@@ -458,6 +458,29 @@ async function mostrarPantallaProgreso(sesion) {
     });
     htmlAsistencia += `</section>`;
 
+    // --- Examen en línea ---
+    let htmlExamen = `<section class="tarjeta"><h2>Examen en Línea <small>30 pts por bloque</small></h2>`;
+    resumenBloques.forEach((b) => {
+      const info = bloques[b.bloque];
+      const ex = info.examen;
+      htmlExamen += `<h3 class="nombre-bloque">Bloque ${b.bloque}</h3>`;
+      if (ex && typeof ex.calificacion === 'number') {
+        const color = colorParaCalificacion(ex.calificacion);
+        htmlExamen += `
+          <div style="text-align:center; padding:10px 0 4px;">
+            <div style="font-size:2.4rem; font-weight:bold; color:${color};">${ex.calificacion.toFixed(1)}</div>
+            <div class="texto-ayuda" style="margin:2px 0 0;">${ex.aciertos} de ${ex.total} correctas</div>
+          </div>
+          <div class="subtotal-bloque"><span>Puntos para tu bloque</span><span>${b.valores.examen.toFixed(1)} / 30 pts</span></div>`;
+      } else {
+        htmlExamen += `
+          <div style="text-align:center; padding:14px 0;">
+            <div class="texto-ayuda" style="margin:0 0 10px;">Aún no presentas el examen de este bloque.</div>
+          </div>`;
+      }
+    });
+    htmlExamen += `<a href="examen.html" style="text-decoration:none;"><button class="btn-secundario">Ir a Examen en Línea</button></a></section>`;
+
     // --- Calificación por bloque ---
     let htmlCalifBloque = `<section class="tarjeta"><h2>Calificación por bloque</h2>`;
     resumenBloques.forEach((b) => {
@@ -495,6 +518,7 @@ async function mostrarPantallaProgreso(sesion) {
       ${htmlPracticas}
       ${htmlEnsayos}
       ${htmlAsistencia}
+      ${htmlExamen}
       ${htmlCalifBloque}
       ${htmlEvalFinal}
       ${htmlAvisos}
