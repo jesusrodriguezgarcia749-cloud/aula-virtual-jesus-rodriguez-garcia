@@ -611,25 +611,36 @@ async function entregarExamen(motivo) {
   }
 }
 
-// --- Revisar si hay un examen pausado con permiso para reanudar ---
-async function intentarReanudar(bloqueId) {
-  if (!alumno || !dbRef) return false;
+// --- Revisar el estado previo del alumno para este bloque antes de dejarlo entrar ---
+// Devuelve uno de: 'reanudar' (ya autorizado a continuar), 'pausado_sin_permiso'
+// (salió de pantalla y su docente aún no lo autoriza), 'ya_presentado' (ya tiene
+// calificación guardada para este bloque), o 'libre' (puede iniciar de cero).
+async function revisarEstadoPrevio(bloqueId) {
+  if (!alumno || !dbRef) return { estado: 'libre' };
   try {
     const firestoreMod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+
     const refPausa = firestoreMod.doc(dbRef, 'materias', materia, 'grupos', alumno.grupo, 'alumnos', alumno.id, 'examenesPausados', `bloque${bloqueId}`);
-    const snap = await firestoreMod.getDoc(refPausa);
-    if (snap.exists() && snap.data().permisoContinuar === true) {
-      const datos = snap.data();
-      preguntasExamen = datos.preguntasGuardadas;
-      respuestas = datos.respuestas;
-      indiceActual = datos.indiceActual;
-      segundosRestantes = datos.segundosRestantes + (datos.tiempoExtraSegundos || 0);
-      return true;
+    const snapPausa = await firestoreMod.getDoc(refPausa);
+    if (snapPausa.exists()) {
+      const datos = snapPausa.data();
+      if (datos.permisoContinuar === true) {
+        return { estado: 'reanudar', datos };
+      }
+      return { estado: 'pausado_sin_permiso' };
     }
+
+    const refExamen = firestoreMod.doc(dbRef, 'materias', materia, 'grupos', alumno.grupo, 'alumnos', alumno.id, 'examenes', `bloque${bloqueId}`);
+    const snapExamen = await firestoreMod.getDoc(refExamen);
+    if (snapExamen.exists()) {
+      return { estado: 'ya_presentado' };
+    }
+
+    return { estado: 'libre' };
   } catch (err) {
-    console.warn('No se pudo verificar reanudación:', err);
+    console.warn('No se pudo verificar el estado previo del examen:', err);
+    return { estado: 'libre' };
   }
-  return false;
 }
 
 // --- Revisar si el bloque está abierto para presentar examen ---
@@ -656,8 +667,24 @@ document.getElementById('btnComenzar').onclick = async () => {
   bloqueActual = document.getElementById('selectBloque').value;
   estadoInicio.textContent = 'Verificando…';
 
-  const reanudado = await intentarReanudar(bloqueActual);
-  if (!reanudado) {
+  const previo = await revisarEstadoPrevio(bloqueActual);
+
+  if (previo.estado === 'pausado_sin_permiso') {
+    estadoInicio.textContent = 'Tu examen anterior quedó pausado porque saliste de la pantalla. No puedes empezar uno nuevo hasta que tu docente te autorice continuar desde el Panel Docente.';
+    return;
+  }
+  if (previo.estado === 'ya_presentado') {
+    estadoInicio.textContent = 'Ya presentaste el examen de este bloque. Si necesitas volver a presentarlo, pídele a tu docente que lo reabra.';
+    return;
+  }
+
+  if (previo.estado === 'reanudar') {
+    const datos = previo.datos;
+    preguntasExamen = datos.preguntasGuardadas;
+    respuestas = datos.respuestas;
+    indiceActual = datos.indiceActual;
+    segundosRestantes = datos.segundosRestantes + (datos.tiempoExtraSegundos || 0);
+  } else {
     const abierto = await bloqueDeExamenAbierto(bloqueActual);
     if (!abierto) {
       estadoInicio.textContent = 'El examen de este bloque aún no está abierto. Espera a que tu docente lo active.';
@@ -683,7 +710,7 @@ if (!alumno) {
   estadoInicio.textContent = 'No se detectó tu sesión. Ve a Actividades e inicia sesión con tu nombre y PIN antes de entrar al examen.';
 }
 </script>
-<script src="menu.js?v=3"></script>
+<script src="menu.js?v=4"></script>
 <script src="musica.js?v=2"></script>
 </body>
 </html>
