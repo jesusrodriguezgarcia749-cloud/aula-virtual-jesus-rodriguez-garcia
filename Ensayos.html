@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ensayos — Aula Virtual JRG</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, 'Times New Roman', serif; background: #f2ece1; color: #17140f; min-height: 100vh; }
+  header { background: #17140f; color: #f2ece1; padding: 20px 24px; display: flex; align-items: center; gap: 12px; }
+  header a { color: #f2ece1; text-decoration: none; font-size: 1.4rem; margin-right: 8px; }
+  header h1 { font-size: 1.2rem; }
+  main { padding: 24px; max-width: 700px; margin: 0 auto; }
+
+  label { display: block; font-size: 0.85rem; color: #6b6252; margin-bottom: 4px; margin-top: 16px; }
+  input {
+    width: 100%; padding: 12px 14px; border-radius: 10px;
+    border: 1px solid #cfc6b6; font-family: inherit; font-size: 1rem; background: #fff;
+  }
+  button {
+    background: #d99a3d; color: #17140f; border: none;
+    padding: 12px 20px; border-radius: 30px; font-weight: bold; font-size: 0.95rem; cursor: pointer;
+  }
+  .btn-principal { width: 100%; margin-top: 16px; }
+  .btn-secundario { background: none; border: 1px solid #6b6252; color: #6b6252; width: 100%; margin-top: 10px; }
+
+  .texto-ayuda { color: #6b6252; font-size: 0.9rem; line-height: 1.5; margin: 6px 0 14px; }
+  .mensaje-error { color: #b04a3a; font-size: 0.88rem; margin-top: 8px; display: none; }
+
+  .cargando { text-align: center; color: #6b6252; padding: 60px 0; }
+
+  .tarjeta-semana {
+    background: #fff; border: 1px solid #e2d9c6; border-radius: 12px;
+    padding: 20px; margin-bottom: 18px;
+  }
+  .tarjeta-semana .tag {
+    display: inline-block; background: #ece2cd; color: #b5772a;
+    font-size: 0.72rem; letter-spacing: 1px; text-transform: uppercase;
+    padding: 3px 10px; border-radius: 10px; margin-bottom: 10px;
+  }
+  .tarjeta-semana h2 { font-size: 1.25rem; margin-bottom: 4px; }
+  .tarjeta-semana .entregable { color: #7a4a1f; font-size: 0.85rem; font-style: italic; margin-bottom: 14px; }
+  .tarjeta-semana ol { margin: 0 0 6px 20px; line-height: 1.7; }
+  .tarjeta-semana li { margin-bottom: 12px; color: #2a241a; }
+
+  .recordatorio {
+    background: #ece2cd; border-left: 4px solid #d99a3d; border-radius: 8px;
+    padding: 14px 16px; margin-top: 16px; color: #4a4030; line-height: 1.5; font-size: 0.88rem;
+  }
+
+  .vacio { text-align: center; color: #6b6252; padding: 40px 20px; }
+</style>
+</head>
+<body>
+
+<div id="pantallaLogin">
+  <header><h1>Ensayos</h1></header>
+  <main>
+    <h2 style="margin-bottom:6px;">Micro-ensayos semanales</h2>
+    <p class="texto-ayuda">Ingresa tu nombre completo y tu PIN para ver la pregunta de la semana activa.</p>
+    <label>Nombre completo</label>
+    <input id="inputNombreAlumno" type="text" placeholder="Nombre y apellido">
+    <label>PIN</label>
+    <input id="inputPinAlumno" type="text" inputmode="numeric" placeholder="4 dígitos" maxlength="4">
+    <button class="btn-principal" id="btnEntrarEnsayos">Entrar</button>
+    <div id="mensajeErrorLogin" class="mensaje-error"></div>
+  </main>
+</div>
+
+<div id="pantallaEnsayos" style="display:none;">
+  <header>
+    <a href="index.html">←</a>
+    <h1>Ensayos — <span id="nombreAlumnoHeader"></span></h1>
+  </header>
+  <main>
+    <div id="contenidoEnsayos"><div class="cargando">Cargando…</div></div>
+    <button class="btn-secundario" id="btnCerrarSesionEnsayos">Salir</button>
+  </main>
+</div>
+
+<script>
+const CLAVE_SESION = 'jrg_ensayos_sesion';
+let db = null, fx = {};
+
+(async () => {
+  try {
+    const fbConfig = await import('./firebase-config.js');
+    const firestoreMod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+    db = fbConfig.db;
+    fx = firestoreMod;
+
+    // Si ya había una sesión guardada en este dispositivo, entra directo
+    const sesionGuardada = localStorage.getItem(CLAVE_SESION);
+    if (sesionGuardada) {
+      const datos = JSON.parse(sesionGuardada);
+      mostrarPantallaEnsayos(datos);
+    }
+  } catch (err) {
+    document.getElementById('contenidoEnsayos').innerHTML =
+      '<p class="texto-ayuda">No se pudo conectar: ' + err.message + '</p>';
+  }
+})();
+
+document.getElementById('btnEntrarEnsayos').onclick = async () => {
+  const nombre = document.getElementById('inputNombreAlumno').value.trim();
+  const pin = document.getElementById('inputPinAlumno').value.trim();
+  const mensajeError = document.getElementById('mensajeErrorLogin');
+  mensajeError.style.display = 'none';
+
+  if (!nombre || !pin) {
+    mensajeError.textContent = 'Escribe tu nombre y tu PIN.';
+    mensajeError.style.display = 'block';
+    return;
+  }
+  if (!db) {
+    mensajeError.textContent = 'Aún no hay conexión, espera un momento e intenta de nuevo.';
+    mensajeError.style.display = 'block';
+    return;
+  }
+
+  try {
+    // Búsqueda en todos los grupos, igual que en Actividades: por nombre + PIN, sin pedir grupo
+    const q = fx.query(
+      fx.collectionGroup(db, 'alumnos'),
+      fx.where('nombre', '==', nombre),
+      fx.where('pin', '==', pin)
+    );
+    const snap = await fx.getDocs(q);
+    if (snap.empty) {
+      mensajeError.textContent = 'No encontramos ese nombre y PIN. Verifica con tu profesor.';
+      mensajeError.style.display = 'block';
+      return;
+    }
+    const docAlumno = snap.docs[0];
+    // La ruta del documento es materias/{materia}/grupos/{grupo}/alumnos/{alumnoId}
+    const segmentos = docAlumno.ref.path.split('/');
+    const materia = segmentos[1];
+    const grupo = segmentos[3];
+    const datosSesion = { alumnoId: docAlumno.id, nombre: docAlumno.data().nombre, materia, grupo };
+    localStorage.setItem(CLAVE_SESION, JSON.stringify(datosSesion));
+    mostrarPantallaEnsayos(datosSesion);
+  } catch (err) {
+    mensajeError.textContent = 'Ocurrió un error al buscar tus datos: ' + err.message;
+    mensajeError.style.display = 'block';
+  }
+};
+
+document.getElementById('btnCerrarSesionEnsayos').onclick = () => {
+  localStorage.removeItem(CLAVE_SESION);
+  document.getElementById('pantallaEnsayos').style.display = 'none';
+  document.getElementById('pantallaLogin').style.display = 'block';
+};
+
+async function mostrarPantallaEnsayos(sesion) {
+  document.getElementById('pantallaLogin').style.display = 'none';
+  document.getElementById('pantallaEnsayos').style.display = 'block';
+  document.getElementById('nombreAlumnoHeader').textContent = sesion.nombre;
+
+  const cont = document.getElementById('contenidoEnsayos');
+  cont.innerHTML = '<div class="cargando">Cargando…</div>';
+
+  try {
+    const refConfig = fx.doc(db, 'materias', sesion.materia, 'grupos', sesion.grupo, 'config', 'ensayosSemanas');
+    const snap = await fx.getDoc(refConfig);
+    const datos = snap.exists() ? snap.data() : {};
+
+    // Buscar todas las semanas marcadas como activas (normalmente una sola)
+    const semanasActivas = Object.keys(datos)
+      .filter((clave) => clave.startsWith('semana') && datos[clave].activa === true)
+      .map((clave) => ({ numero: parseInt(clave.replace('semana', '')), ...datos[clave] }))
+      .sort((a, b) => a.numero - b.numero);
+
+    if (semanasActivas.length === 0) {
+      cont.innerHTML = '<div class="vacio">Tu profesor aún no ha activado la pregunta de esta semana.<br>Vuelve a revisar más tarde.</div>';
+      return;
+    }
+
+    cont.innerHTML = semanasActivas.map((s) => `
+      <div class="tarjeta-semana">
+        <span class="tag">Semana ${s.numero}</span>
+        <h2>Micro-ensayo de la semana</h2>
+        <div class="entregable">${s.entregable || ''}</div>
+        <ol>${(s.preguntas || []).map((p) => `<li>${p}</li>`).join('')}</ol>
+      </div>
+    `).join('') + `
+      <div class="recordatorio">
+        Responde a mano en tu libreta, con una extensión mínima de media cuartilla por
+        pregunta. Las respuestas de una sola línea o meramente descriptivas no se
+        califican. Entrega tu bitácora a tu profesor como de costumbre.
+      </div>
+    `;
+  } catch (err) {
+    cont.innerHTML = '<p class="texto-ayuda">No se pudo cargar la información: ' + err.message + '</p>';
+  }
+}
+</script>
+<script src="menu.js"></script>
+<script src="musica.js"></script>
+</body>
+</html>
