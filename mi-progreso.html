@@ -9,8 +9,9 @@
   body { font-family: Georgia, 'Times New Roman', serif; background: #f2ece1; color: #17140f; min-height: 100vh; }
   header { background: #17140f; color: #f2ece1; padding: 20px 24px; display: flex; align-items: center; gap: 12px; }
   header a { color: #f2ece1; text-decoration: none; font-size: 1.4rem; margin-right: 8px; }
-  header h1 { font-size: 1.15rem; }
-  main { padding: 24px; max-width: 700px; margin: 0 auto; }
+  header h1 { font-size: 1.1rem; }
+  header .subtexto { font-size: 0.78rem; color: #cfc6b6; margin-top: 2px; }
+  main { padding: 20px; max-width: 700px; margin: 0 auto; }
 
   label { display: block; font-size: 0.85rem; color: #6b6252; margin-bottom: 4px; margin-top: 16px; }
   input {
@@ -23,55 +24,91 @@
   }
   .btn-principal { width: 100%; margin-top: 16px; }
   .btn-secundario { background: none; border: 1px solid #6b6252; color: #6b6252; width: 100%; margin-top: 10px; }
+  .btn-salir {
+    margin-left: auto; background: none; border: 1px solid #d99a3d; color: #d99a3d;
+    padding: 8px 16px; font-size: 0.85rem; white-space: nowrap;
+  }
 
   .texto-ayuda { color: #6b6252; font-size: 0.9rem; line-height: 1.5; margin: 6px 0 14px; }
   .mensaje-error { color: #b04a3a; font-size: 0.88rem; margin-top: 8px; display: none; }
   .cargando { text-align: center; color: #6b6252; padding: 60px 0; }
 
-  .tarjeta-bloque {
+  .saludo { font-size: 1.1rem; margin-bottom: 18px; }
+
+  section.tarjeta {
     background: #fff; border: 1px solid #e2d9c6; border-radius: 12px;
-    margin-bottom: 16px; overflow: hidden;
+    padding: 18px; margin-bottom: 18px;
   }
-  .encabezado-bloque {
-    padding: 16px 18px; display: flex; align-items: center; justify-content: space-between;
-    cursor: pointer; gap: 10px;
-  }
-  .encabezado-bloque .nombre-bloque { font-size: 1.02rem; font-weight: bold; }
-  .encabezado-bloque .nombre-bloque span { display: block; font-weight: normal; font-size: 0.78rem; color: #6b6252; margin-top: 2px; }
-  .calif-circulo {
-    width: 54px; height: 54px; border-radius: 50%; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: bold; font-size: 1.1rem; color: #fff;
-  }
-  .flecha-desglose { color: #a89f8d; font-size: 1.1rem; transition: transform 0.2s ease; }
-  .tarjeta-bloque.abierta .flecha-desglose { transform: rotate(180deg); }
+  section.tarjeta h2 { font-size: 1.05rem; margin-bottom: 12px; }
+  section.tarjeta h2 small { display: block; font-weight: normal; font-size: 0.78rem; color: #6b6252; margin-top: 2px; }
 
-  .desglose-bloque {
-    display: none; padding: 0 18px 18px; border-top: 1px solid #ece2cd;
+  h3.nombre-bloque {
+    font-size: 0.85rem; color: #b5772a; text-transform: uppercase; letter-spacing: 0.5px;
+    margin: 16px 0 8px;
   }
-  .tarjeta-bloque.abierta .desglose-bloque { display: block; }
-  .fila-rubro {
+  h3.nombre-bloque:first-of-type { margin-top: 0; }
+
+  .fila-simple {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 10px 0; border-bottom: 1px solid #f2ece1; font-size: 0.92rem;
+    padding: 9px 0; border-bottom: 1px solid #f2ece1; font-size: 0.92rem;
   }
-  .fila-rubro:last-child { border-bottom: none; }
-  .fila-rubro .barra-fondo {
-    flex: 1; height: 6px; background: #ece2cd; border-radius: 4px; margin: 0 12px; overflow: hidden;
+  .fila-simple:last-child { border-bottom: none; }
+  .fila-simple .valor { color: #4a4030; white-space: nowrap; }
+
+  .item-entrega {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 10px; padding: 9px 0; border-bottom: 1px solid #f2ece1; font-size: 0.9rem;
   }
-  .fila-rubro .barra-relleno { height: 100%; background: #d99a3d; border-radius: 4px; }
-  .fila-rubro .valor-rubro { white-space: nowrap; color: #4a4030; font-size: 0.85rem; min-width: 62px; text-align: right; }
-  .fila-total {
-    display: flex; justify-content: space-between; font-weight: bold;
-    padding-top: 12px; margin-top: 6px; border-top: 1px solid #e2d9c6;
+  .item-entrega:last-child { border-bottom: none; }
+  .item-entrega .icono-estado { flex-shrink: 0; width: 20px; text-align: center; }
+  .item-entrega .detalle-item { flex: 1; }
+  .item-entrega .fecha-item { color: #a89f8d; font-size: 0.78rem; }
+  .item-entrega .estado-item { white-space: nowrap; font-size: 0.85rem; font-weight: bold; }
+  .estado-pendiente { color: #a89f8d; }
+  .estado-entregado { color: #6a9955; }
+
+  .subtotal-bloque {
+    display: flex; justify-content: space-between; background: #f2ece1;
+    border-radius: 8px; padding: 10px 12px; margin: 10px 0 4px; font-size: 0.88rem; font-weight: bold;
   }
 
-  .vacio { text-align: center; color: #6b6252; padding: 40px 20px; }
-  .resumen-final {
-    background: #17140f; color: #f2ece1; border-radius: 12px; padding: 18px;
-    text-align: center; margin-top: 6px; margin-bottom: 18px;
+  details.desglose-detalle { margin-top: 6px; }
+  details.desglose-detalle summary {
+    cursor: pointer; color: #b5772a; font-size: 0.85rem; padding: 6px 0; list-style: none;
   }
-  .resumen-final .num { font-size: 1.8rem; font-weight: bold; color: #d99a3d; }
-  .resumen-final .txt { font-size: 0.82rem; color: #cfc6b6; margin-top: 2px; }
+  details.desglose-detalle summary::-webkit-details-marker { display: none; }
+  details.desglose-detalle summary::before { content: '▸ '; }
+  details.desglose-detalle[open] summary::before { content: '▾ '; }
+  details.desglose-detalle .contenido-desglose { padding: 6px 0 0 12px; }
+
+  .caja-acumulado {
+    background: #17140f; color: #f2ece1; border-radius: 10px; padding: 14px 16px;
+    display: flex; justify-content: space-between; align-items: center; margin: 12px 0 10px;
+  }
+  .caja-acumulado .num { color: #d99a3d; font-weight: bold; font-size: 1.05rem; }
+  .nota-equivalencia {
+    background: #ece2cd; border-radius: 8px; padding: 10px 12px; font-size: 0.82rem;
+    color: #4a4030; line-height: 1.5; margin-bottom: 4px;
+  }
+  .nota-equivalencia .pct { font-weight: bold; color: #b5772a; }
+
+  .fila-calif-bloque {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 0; border-bottom: 1px solid #f2ece1;
+  }
+  .fila-calif-bloque:last-of-type { border-bottom: none; }
+  .fila-calif-bloque .valor { font-weight: bold; }
+  .fila-rubro-mini {
+    display: flex; justify-content: space-between; font-size: 0.85rem;
+    padding: 5px 0; color: #4a4030;
+  }
+
+  .aviso-item { padding: 10px 0; border-bottom: 1px solid #f2ece1; font-size: 0.9rem; }
+  .aviso-item:last-child { border-bottom: none; }
+  .aviso-item .fecha-aviso { color: #a89f8d; font-size: 0.78rem; display: block; margin-top: 2px; }
+  .vacio-seccion { color: #a89f8d; font-size: 0.88rem; text-align: center; padding: 6px 0; }
+
+  footer.pie-progreso { text-align: center; color: #a89f8d; font-size: 0.78rem; padding: 10px 0 40px; }
 </style>
 </head>
 <body>
@@ -93,11 +130,14 @@
 <div id="pantallaProgreso" style="display:none;">
   <header>
     <a href="index.html">←</a>
-    <h1>Progreso — <span id="nombreAlumnoHeader"></span></h1>
+    <div>
+      <h1>Bases Culinarias</h1>
+      <div class="subtexto">Aula Virtual · Panel personal del alumno</div>
+    </div>
+    <button class="btn-salir" id="btnCerrarSesionProgreso">Salir</button>
   </header>
   <main>
     <div id="contenidoProgreso"><div class="cargando">Cargando…</div></div>
-    <button class="btn-secundario" id="btnCerrarSesionProgreso">Salir</button>
   </main>
 </div>
 
@@ -111,13 +151,23 @@ const NOMBRES_BLOQUE = {
   '3': 'Desarrollo de habilidades para la cocina',
 };
 
+const TEMAS_SEMANA = {
+  '1': ['Géneros y Estructura Clásica', 'Secuencia Operativa', 'Rendimiento y Merma', 'Termodinámica y Sanidad', 'Escalabilidad — Micro-Ensayo 1'],
+  '2': ['Aprovisionamiento', 'Propiedades Funcionales', 'Grasas y Aceites', 'Variedades Físicas y Scoville', 'Cualidades Gastronómicas — Micro-Ensayo 2'],
+  '3': ['Técnicas de Cocción', 'Destrezas con Proteínas', 'Cortes Clásicos', 'Semillas y Cereales', 'Hierbas y Especias — Micro-Ensayo 3'],
+};
+
 const RUBROS = [
   { clave: 'participacion', label: 'Participación', max: 20 },
   { clave: 'ensayos', label: 'Ensayos', max: 30 },
-  { clave: 'practicas', label: 'Prácticas de cocina', max: 10 },
+  { clave: 'practicas', label: 'Prácticas', max: 10 },
   { clave: 'asistencia', label: 'Asistencia', max: 10 },
   { clave: 'examen', label: 'Examen', max: 30 },
 ];
+
+const ESTADOS_ASISTENCIA_LABEL = {
+  presente: 'Presente', retardo: 'Retardo', justificado: 'Justificado', falta: 'Falta',
+};
 
 (async () => {
   try {
@@ -184,38 +234,7 @@ document.getElementById('btnCerrarSesionProgreso').onclick = () => {
   document.getElementById('pantallaLogin').style.display = 'block';
 };
 
-// --- Mismo cálculo automático que usa admin.html, para que el número coincida siempre ---
-async function calcularSubtotalesAutomaticos(materia, grupo, alumnoId, bloque) {
-  const snapPart = await fx.getDocs(fx.collection(db, 'materias', materia, 'grupos', grupo, 'alumnos', alumnoId, 'participacion'));
-  let participacion = 0;
-  snapPart.forEach((d) => { if (d.id.split('.')[0] === bloque) participacion += (d.data().puntos || 0); });
-
-  const snapPract = await fx.getDocs(fx.collection(db, 'materias', materia, 'grupos', grupo, 'alumnos', alumnoId, 'practicas'));
-  let practicas = 0;
-  snapPract.forEach((d) => { if (d.data().bloque === bloque) practicas += (d.data().puntos || 0); });
-  practicas = Math.min(practicas, 10);
-
-  const snapEns = await fx.getDocs(fx.collection(db, 'materias', materia, 'grupos', grupo, 'alumnos', alumnoId, 'ensayos'));
-  let ensayos = 0;
-  const inicio = (parseInt(bloque) - 1) * 5 + 1;
-  snapEns.forEach((d) => {
-    const num = parseInt(d.id.replace('semana', ''));
-    if (num >= inicio && num < inicio + 5) ensayos += (d.data().puntos || 0);
-  });
-  ensayos = Math.min(ensayos, 30);
-
-  const snapAsist = await fx.getDocs(fx.collection(db, 'materias', materia, 'grupos', grupo, 'alumnos', alumnoId, 'asistencia'));
-  let asistencia = 0;
-  snapAsist.forEach((d) => { if (d.data().bloque === bloque) asistencia += (d.data().valor || 0); });
-  asistencia = Math.min(asistencia, 10);
-
-  const snapExam = await fx.getDocs(fx.collection(db, 'materias', materia, 'grupos', grupo, 'alumnos', alumnoId, 'examenes'));
-  let examen = 0;
-  snapExam.forEach((d) => { if (d.id === 'bloque' + bloque) examen = (d.data().calificacion || 0) * 3; });
-
-  return { participacion: Math.min(participacion, 20), practicas, ensayos, asistencia, examen };
-}
-
+function numeroSemanaGlobal(bloque, indiceLocal) { return (parseInt(bloque) - 1) * 5 + indiceLocal + 1; }
 function colorParaCalificacion(calif) {
   if (calif >= 8) return '#6a9955';
   if (calif >= 6) return '#d99a3d';
@@ -225,71 +244,216 @@ function colorParaCalificacion(calif) {
 async function mostrarPantallaProgreso(sesion) {
   document.getElementById('pantallaLogin').style.display = 'none';
   document.getElementById('pantallaProgreso').style.display = 'block';
-  document.getElementById('nombreAlumnoHeader').textContent = sesion.nombre;
 
   const cont = document.getElementById('contenidoProgreso');
   cont.innerHTML = '<div class="cargando">Cargando…</div>';
 
   try {
-    const bloquesInfo = [];
-    for (const bloque of ['1', '2', '3']) {
-      const auto = await calcularSubtotalesAutomaticos(sesion.materia, sesion.grupo, sesion.alumnoId, bloque);
+    const ref = (...partes) => fx.doc(db, 'materias', sesion.materia, 'grupos', sesion.grupo, 'alumnos', sesion.alumnoId, ...partes);
+    const col = (nombre) => fx.collection(db, 'materias', sesion.materia, 'grupos', sesion.grupo, 'alumnos', sesion.alumnoId, nombre);
 
-      const refAjuste = fx.doc(db, 'materias', sesion.materia, 'grupos', sesion.grupo, 'alumnos', sesion.alumnoId, 'ajustesManuales', 'bloque' + bloque);
-      const snapAjuste = await fx.getDoc(refAjuste);
-      const ajustes = snapAjuste.exists() ? snapAjuste.data() : {};
-
-      const aplicar = (autoVal, manualVal) => (manualVal !== undefined && manualVal !== null) ? manualVal : autoVal;
-      const valores = {
-        participacion: aplicar(auto.participacion, ajustes.participacion),
-        ensayos: aplicar(auto.ensayos, ajustes.ensayos),
-        practicas: aplicar(auto.practicas, ajustes.practicas),
-        asistencia: aplicar(auto.asistencia, ajustes.asistencia),
-        examen: aplicar(auto.examen, ajustes.examen),
-      };
-      const total = Object.values(valores).reduce((a, b) => a + b, 0);
-      bloquesInfo.push({ bloque, valores, total, calificacion: total / 10 });
+    // --- Cargar TODO lo del alumno de una vez ---
+    const [snapPart, snapPract, snapEns, snapAsist, snapExam, snapAvisos] = await Promise.all([
+      fx.getDocs(col('participacion')),
+      fx.getDocs(col('practicas')),
+      fx.getDocs(col('ensayos')),
+      fx.getDocs(col('asistencia')),
+      fx.getDocs(col('examenes')),
+      fx.getDocs(fx.query(fx.collection(db, 'materias', sesion.materia, 'grupos', sesion.grupo, 'avisos'), fx.orderBy('fecha', 'desc'))),
+    ]);
+    const ajustes = {};
+    for (const b of ['1', '2', '3']) {
+      const snapAjuste = await fx.getDoc(ref('ajustesManuales', 'bloque' + b));
+      ajustes[b] = snapAjuste.exists() ? snapAjuste.data() : {};
     }
 
-    const promedioGeneral = bloquesInfo.reduce((acc, b) => acc + b.calificacion, 0) / bloquesInfo.length;
+    // --- Organizar por bloque ---
+    const bloques = {};
+    ['1', '2', '3'].forEach((b) => {
+      bloques[b] = { participacionTotal: 0, practicas: [], ensayos: [], asistenciaDias: [], asistenciaTotal: 0, examen: null };
+    });
+
+    snapPart.forEach((d) => {
+      const b = d.id.split('.')[0];
+      if (bloques[b]) bloques[b].participacionTotal += (d.data().puntos || 0);
+    });
+    snapPract.forEach((d) => {
+      const dat = d.data();
+      if (bloques[dat.bloque]) bloques[dat.bloque].practicas.push(dat);
+    });
+    snapEns.forEach((d) => {
+      const dat = d.data();
+      const b = String(dat.bloque || Math.ceil(dat.semana / 5));
+      if (bloques[b]) bloques[b].ensayos.push({ semana: dat.semana, entregada: dat.entregada, puntos: dat.puntos || 0 });
+    });
+    snapAsist.forEach((d) => {
+      const dat = d.data();
+      if (bloques[dat.bloque]) {
+        bloques[dat.bloque].asistenciaDias.push(dat);
+        bloques[dat.bloque].asistenciaTotal += (dat.valor || 0);
+      }
+    });
+    snapExam.forEach((d) => {
+      const b = d.id.replace('bloque', '');
+      if (bloques[b]) bloques[b].examen = d.data();
+    });
+    bloques['1'].practicas.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+    bloques['2'].practicas.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+    bloques['3'].practicas.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+
+    // --- Calcular subtotales automáticos + aplicar ajustes manuales (idéntico a admin.html) ---
+    const aplicar = (auto, manual) => (manual !== undefined && manual !== null) ? manual : auto;
+    const resumenBloques = ['1', '2', '3'].map((b) => {
+      const info = bloques[b];
+      const practicasSuma = Math.min(info.practicas.reduce((a, p) => a + (p.puntos || 0), 0), 10);
+      const ensayosSuma = Math.min(info.ensayos.reduce((a, e) => a + (e.puntos || 0), 0), 30);
+      const asistenciaSuma = Math.min(info.asistenciaTotal, 10);
+      const examenPts = info.examen ? (info.examen.calificacion || 0) * 3 : 0;
+      const auto = {
+        participacion: Math.min(info.participacionTotal, 20),
+        ensayos: ensayosSuma,
+        practicas: practicasSuma,
+        asistencia: asistenciaSuma,
+        examen: examenPts,
+      };
+      const aj = ajustes[b];
+      const valores = {
+        participacion: aplicar(auto.participacion, aj.participacion),
+        ensayos: aplicar(auto.ensayos, aj.ensayos),
+        practicas: aplicar(auto.practicas, aj.practicas),
+        asistencia: aplicar(auto.asistencia, aj.asistencia),
+        examen: aplicar(auto.examen, aj.examen),
+      };
+      const total = Object.values(valores).reduce((a, v) => a + v, 0);
+      return { bloque: b, valores, total, calificacion: total / 10 };
+    });
+
+    const ensayosAcumulado = resumenBloques.reduce((a, b) => a + b.valores.ensayos, 0); // sobre 90
+    const pctEvaluacionFinal = (ensayosAcumulado / 90) * 35;
+
+    // ===================== ARMAR HTML =====================
+
+    // --- Participación ---
+    let htmlParticipacion = `<section class="tarjeta"><h2>Participación <small>20 pts por bloque</small></h2>`;
+    resumenBloques.forEach((b) => {
+      htmlParticipacion += `<div class="fila-simple"><span>Bloque ${b.bloque}</span><span class="valor">${b.valores.participacion.toFixed(1)} / 20 pts</span></div>`;
+    });
+    htmlParticipacion += `<a href="actividades.html" style="text-decoration:none;"><button class="btn-secundario" style="margin-top:14px;">Ir a Actividades</button></a></section>`;
+
+    // --- Prácticas ---
+    let htmlPracticas = `<section class="tarjeta"><h2>Prácticas de cocina <small>10 pts por bloque</small></h2>`;
+    resumenBloques.forEach((b) => {
+      const info = bloques[b.bloque];
+      htmlPracticas += `<h3 class="nombre-bloque">Bloque ${b.bloque}</h3>`;
+      if (info.practicas.length === 0) {
+        htmlPracticas += `<div class="vacio-seccion">Sin prácticas evaluadas todavía.</div>`;
+      } else {
+        info.practicas.forEach((p) => {
+          htmlPracticas += `
+            <div class="item-entrega">
+              <div class="detalle-item">
+                <div class="fecha-item">${p.fecha || ''}</div>
+                <div>${(p.calificacion || 0).toFixed(1)}/10</div>
+              </div>
+              <span class="estado-item estado-entregado">+${(p.puntos || 0).toFixed(1)} pts</span>
+            </div>`;
+        });
+      }
+      htmlPracticas += `<div class="subtotal-bloque"><span>Subtotal Bloque ${b.bloque}</span><span>${b.valores.practicas.toFixed(1)} / 10 pts</span></div>`;
+    });
+    htmlPracticas += `</section>`;
+
+    // --- Ensayos ---
+    let htmlEnsayos = `<section class="tarjeta"><h2>Ensayos <small>30 pts por bloque</small></h2>`;
+    resumenBloques.forEach((b) => {
+      htmlEnsayos += `<h3 class="nombre-bloque">Bloque ${b.bloque}</h3>`;
+      const info = bloques[b.bloque];
+      TEMAS_SEMANA[b.bloque].forEach((tema, i) => {
+        const semGlobal = numeroSemanaGlobal(b.bloque, i);
+        const registro = info.ensayos.find((e) => e.semana === semGlobal);
+        const entregada = registro && registro.entregada;
+        htmlEnsayos += `
+          <div class="item-entrega">
+            <span class="icono-estado">${entregada ? '✔️' : '⏳'}</span>
+            <div class="detalle-item">Sem. ${semGlobal} — ${tema}</div>
+            <span class="estado-item ${entregada ? 'estado-entregado' : 'estado-pendiente'}">
+              ${entregada ? '+' + (registro.puntos || 0).toFixed(1) + ' pts' : 'Pendiente'}
+            </span>
+          </div>`;
+      });
+      htmlEnsayos += `<div class="subtotal-bloque"><span>Subtotal Bloque ${b.bloque}</span><span>${b.valores.ensayos.toFixed(1)} / 30 pts</span></div>`;
+    });
+    htmlEnsayos += `
+      <div class="caja-acumulado">
+        <span>Acumulado del cuatrimestre</span>
+        <span class="num">${ensayosAcumulado.toFixed(1)} / 90 pts</span>
+      </div>
+      <div class="nota-equivalencia">
+        Tus 15 bitácoras equivalen hoy a <span class="pct">${pctEvaluacionFinal.toFixed(1)}%</span> de tu Evaluación Final (35%
+        corresponde a la entrega de ensayos). Tu docente puede ajustar puntos al cierre según la presentación del compendio final.
+      </div>
+    </section>`;
+
+    // --- Asistencia ---
+    let htmlAsistencia = `<section class="tarjeta"><h2>Asistencia <small>10 pts por bloque</small></h2>`;
+    resumenBloques.forEach((b) => {
+      const info = bloques[b.bloque];
+      htmlAsistencia += `<h3 class="nombre-bloque">Bloque ${b.bloque}</h3>`;
+      if (info.asistenciaDias.length === 0) {
+        htmlAsistencia += `<div class="fila-simple"><span>Sin registros</span><span class="valor">0.00 / 10 pts</span></div>`;
+      } else {
+        htmlAsistencia += `<div class="fila-simple"><span>${info.asistenciaDias.length} día(s) registrados</span><span class="valor">${b.valores.asistencia.toFixed(2)} / 10 pts</span></div>`;
+        const dias = info.asistenciaDias.slice().sort((x, y) => new Date(x.fecha) - new Date(y.fecha));
+        htmlAsistencia += `<details class="desglose-detalle"><summary>Ver días registrados (${dias.length})</summary><div class="contenido-desglose">`;
+        dias.forEach((d) => {
+          htmlAsistencia += `<div class="fila-rubro-mini"><span>${d.fecha}</span><span>${ESTADOS_ASISTENCIA_LABEL[d.estado] || d.estado}</span></div>`;
+        });
+        htmlAsistencia += `</div></details>`;
+      }
+    });
+    htmlAsistencia += `</section>`;
+
+    // --- Calificación por bloque ---
+    let htmlCalifBloque = `<section class="tarjeta"><h2>Calificación por bloque</h2>`;
+    resumenBloques.forEach((b) => {
+      const color = colorParaCalificacion(b.calificacion);
+      htmlCalifBloque += `
+        <div class="fila-calif-bloque">
+          <span>Bloque ${b.bloque}</span>
+          <span class="valor" style="color:${color};">${b.total.toFixed(1)} / 100 (${b.calificacion.toFixed(1)})</span>
+        </div>`;
+    });
+    resumenBloques.forEach((b) => {
+      htmlCalifBloque += `<details class="desglose-detalle"><summary>Ver desglose del Bloque ${b.bloque}</summary><div class="contenido-desglose">`;
+      RUBROS.forEach((r) => {
+        htmlCalifBloque += `<div class="fila-rubro-mini"><span>${r.label}</span><span>${b.valores[r.clave].toFixed(1)} / ${r.max}</span></div>`;
+      });
+      htmlCalifBloque += `</div></details>`;
+    });
+    htmlCalifBloque += `<p class="texto-ayuda" style="margin-top:10px;">Cada bloque vale 100 puntos: Participación 20 · Ensayos 30 · Prácticas 10 · Asistencia 10 · Examen 30.</p></section>`;
+
+    // --- Avisos ---
+    let htmlAvisos = `<section class="tarjeta"><h2>Avisos de tu docente</h2>`;
+    if (snapAvisos.empty) {
+      htmlAvisos += `<div class="vacio-seccion">No hay avisos por ahora.</div>`;
+    } else {
+      snapAvisos.forEach((d) => {
+        const av = d.data();
+        htmlAvisos += `<div class="aviso-item">${av.texto}<span class="fecha-aviso">${new Date(av.fecha).toLocaleDateString('es-MX')}</span></div>`;
+      });
+    }
+    htmlAvisos += `</section>`;
 
     cont.innerHTML = `
-      <div class="resumen-final">
-        <div class="num">${promedioGeneral.toFixed(1)}</div>
-        <div class="txt">Promedio general de los 3 bloques</div>
-      </div>
-      ${bloquesInfo.map((b) => {
-        const color = colorParaCalificacion(b.calificacion);
-        return `
-        <div class="tarjeta-bloque" data-bloque="${b.bloque}">
-          <div class="encabezado-bloque">
-            <div class="nombre-bloque">Bloque ${b.bloque}<span>${NOMBRES_BLOQUE[b.bloque]}</span></div>
-            <div class="calif-circulo" style="background:${color};">${b.calificacion.toFixed(1)}</div>
-            <div class="flecha-desglose">▾</div>
-          </div>
-          <div class="desglose-bloque">
-            ${RUBROS.map((r) => {
-              const val = b.valores[r.clave];
-              const pct = Math.min(100, (val / r.max) * 100);
-              return `
-              <div class="fila-rubro">
-                <span>${r.label}</span>
-                <span class="barra-fondo"><span class="barra-relleno" style="width:${pct}%;"></span></span>
-                <span class="valor-rubro">${val.toFixed(1)} / ${r.max}</span>
-              </div>`;
-            }).join('')}
-            <div class="fila-total">
-              <span>Total del bloque</span>
-              <span>${b.total.toFixed(1)} / 100 (${b.calificacion.toFixed(1)})</span>
-            </div>
-          </div>
-        </div>`;
-      }).join('')}
+      <div class="saludo">Hola, <strong>${sesion.nombre}</strong></div>
+      ${htmlParticipacion}
+      ${htmlPracticas}
+      ${htmlEnsayos}
+      ${htmlAsistencia}
+      ${htmlCalifBloque}
+      ${htmlAvisos}
+      <footer class="pie-progreso">Aula Virtual · Bases Culinarias · Panel personal del alumno</footer>
     `;
-
-    document.querySelectorAll('.encabezado-bloque').forEach((enc) => {
-      enc.onclick = () => enc.closest('.tarjeta-bloque').classList.toggle('abierta');
-    });
   } catch (err) {
     cont.innerHTML = '<p class="texto-ayuda">No se pudo cargar tu progreso: ' + err.message + '</p>';
   }
